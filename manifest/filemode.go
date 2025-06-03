@@ -16,29 +16,23 @@ func ParseFileMode(input string) (os.FileMode, error) {
 	switch input[0] {
 	case '-':
 	case 'd':
-		mode |= os.ModeDir // d: is a directory
+		mode |= os.ModeDir | os.ModeDevice // d: directory or device file
 	case 'a':
 		mode |= os.ModeAppend // a: append-only
 	case 'l':
-		mode |= os.ModeExclusive // l: exclusive use
-	case 'T':
-		mode |= os.ModeTemporary // T: temporary file; Plan 9 only
-	case 'L':
-		mode |= os.ModeSymlink // L: symbolic link
-	case 'D':
-		mode |= os.ModeDevice // D: device file
+		mode |= os.ModeExclusive | os.ModeSymlink // l: exclusive use or symbolic link
+	case 't':
+		mode |= os.ModeTemporary | os.ModeSticky // t: temporary file or sticky
 	case 'p':
 		mode |= os.ModeNamedPipe // p: named pipe (FIFO)
-	case 'S':
-		mode |= os.ModeSocket // S: Unix domain socket
+	case 's':
+		mode |= os.ModeSocket // s: Unix domain socket
 	case 'u':
 		mode |= os.ModeSetuid // u: setuid
 	case 'g':
 		mode |= os.ModeSetgid // g: setgid
 	case 'c':
 		mode |= os.ModeCharDevice // c: Unix character device, when ModeDevice is set
-	case 't':
-		mode |= os.ModeSticky // t: sticky
 	}
 
 	if input[1] == 'r' {
