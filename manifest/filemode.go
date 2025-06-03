@@ -12,27 +12,50 @@ func ParseFileMode(input string) (os.FileMode, error) {
 	if len(input) < 10 {
 		return 0, errors.New("unable to parse file mode string too short")
 	}
+	char := input[0]
 	input = strings.ToLower(input)
-	switch input[0] {
+	switch char {
 	case '-':
 	case 'd':
-		mode |= os.ModeDir | os.ModeDevice // d: directory or device file
+		// In the string representation produced by os.FileMode,
+		// the letter 'd' is used for both directories and device files
+		// (uppercase 'D').  If any execute bits are present we assume a
+		// directory, otherwise a device file.
+		if strings.ContainsRune(input[1:10], 'x') {
+			mode |= os.ModeDir
+		} else {
+			mode |= os.ModeDevice
+		}
+	case 'D':
+		// device file
+		mode |= os.ModeDevice
 	case 'a':
-		mode |= os.ModeAppend // a: append-only
+		// append-only
+		mode |= os.ModeAppend
 	case 'l':
-		mode |= os.ModeExclusive | os.ModeSymlink // l: exclusive use or symbolic link
+		// symbolic link
+		mode |= os.ModeSymlink
 	case 't':
-		mode |= os.ModeTemporary | os.ModeSticky // t: temporary file or sticky
+		// temporary file
+		mode |= os.ModeTemporary
 	case 'p':
-		mode |= os.ModeNamedPipe // p: named pipe (FIFO)
+		// named pipe (FIFO)
+		mode |= os.ModeNamedPipe
 	case 's':
-		mode |= os.ModeSocket // s: Unix domain socket
+		// Unix domain socket
+		mode |= os.ModeSocket
 	case 'u':
-		mode |= os.ModeSetuid // u: setuid
+		// setuid
+		mode |= os.ModeSetuid
 	case 'g':
-		mode |= os.ModeSetgid // g: setgid
+		// setgid
+		mode |= os.ModeSetgid
 	case 'c':
-		mode |= os.ModeCharDevice // c: Unix character device, when ModeDevice is set
+		// Unix character device, when ModeDevice is set
+		mode |= os.ModeDevice | os.ModeCharDevice
+	case 'b':
+		// Unix block device
+		mode |= os.ModeDevice
 	}
 
 	if input[1] == 'r' {
