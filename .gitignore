@@ -56,3 +56,7 @@ Thumbs.db
 # Project-local state
 .docket-claims/
 .claude/
+.direnv/
+
+# Nix build artifacts
+result

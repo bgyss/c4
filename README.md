@@ -63,6 +63,28 @@ go install github.com/Avalanche-io/c4/cmd/c4@latest
 go install github.com/Avalanche-io/c4sh@latest
 ```
 
+### Nix
+
+This repository includes a Nix flake for reproducible builds and a
+development shell across macOS and Linux.
+
+```bash
+# Build the CLI
+nix build
+
+# Run the default app
+echo "hello" | nix run
+
+# Enter the development shell
+nix develop
+
+# Run the packaged checks
+nix flake check
+```
+
+If you use `direnv`, run `direnv allow` once in the repo root to load
+the flake automatically.
+
 ### Other languages
 
 ```bash
