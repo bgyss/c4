@@ -70,6 +70,93 @@ func main() {
 
 ---
 
+## Installation & Building
+
+### Using Nix (Recommended)
+
+This project includes a Nix flake for reproducible builds and development environments across multiple platforms.
+
+#### Quick Start
+
+```bash
+# Build the CLI tool
+nix build
+
+# Run directly without installing
+echo "Hello World" | nix run
+
+# Enter development environment
+nix develop
+```
+
+#### Supported Platforms
+
+The flake supports building for all major platforms:
+- `aarch64-darwin` (Apple Silicon macOS)
+- `aarch64-linux` (ARM64 Linux)
+- `i686-linux` (32-bit x86 Linux)
+- `x86_64-darwin` (Intel macOS)
+- `x86_64-linux` (64-bit x86 Linux)
+
+#### Platform-Specific Builds
+
+```bash
+# Build for specific platform
+nix build .#packages.x86_64-linux.c4
+nix build .#packages.aarch64-linux.c4
+
+# View all available platforms
+nix flake show --all-systems
+```
+
+#### Development Environment
+
+The development shell includes all necessary tools:
+
+```bash
+# Enter the development environment
+nix develop
+
+# Available tools in the shell:
+go build ./cmd/c4          # Build the CLI tool
+go test ./...              # Run all tests
+go test -cover ./...       # Run tests with coverage
+golangci-lint run          # Run linter
+```
+
+#### CI/CD Integration
+
+```bash
+# Run all checks (build, test, lint)
+nix flake check
+
+# Run checks for all platforms
+nix flake check --all-systems
+```
+
+#### direnv Integration (Optional)
+
+For automatic environment loading when entering the directory:
+
+```bash
+# Allow direnv (if you have direnv installed)
+direnv allow
+
+# The development environment will now load automatically
+```
+
+### Traditional Go Build
+
+```bash
+# Build manually with Go
+go build -o c4 ./cmd/c4
+
+# Run tests
+go test ./...
+```
+
+---
+
 ### Releases
 
 Current release: [v0.8.0](https://github.com/Avalanche-io/c4/tree/v0.8.0)

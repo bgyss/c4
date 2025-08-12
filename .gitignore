@@ -32,3 +32,7 @@ _testmain.go
 
 .DS_Store
 .claude/
+.direnv/
+
+# Nix build artifacts
+result
