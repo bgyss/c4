@@ -71,7 +71,7 @@ func TestRamStore(t *testing.T) {
 	// Test all ids against all filenames
 	for _, id1 := range ids {
 		found := false
-		for id2, _ := range rsmap {
+		for id2 := range rsmap {
 			if id1 == id2.String() {
 				found = true
 				break

@@ -308,7 +308,7 @@ func viewBytes(b []byte) string {
 		num := strconv.Itoa(int(b[j]))
 		out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 	}
-	out += fmt.Sprintf(" ... ")
+	out += " ... "
 	offset := 64 - length
 	if len(b) >= 128 {
 		for j := 64 - length; j < 64+length; j++ {
@@ -319,7 +319,7 @@ func viewBytes(b []byte) string {
 			out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 		}
 		offset = 128 - length
-		out += fmt.Sprintf(" ... ")
+		out += " ... "
 	}
 	for j := offset; j < offset+length; j++ {
 		num := strconv.Itoa(int(b[j]))

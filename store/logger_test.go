@@ -22,8 +22,7 @@ func TestLoggerStore(t *testing.T) {
 	defer func() { _ = os.RemoveAll(path) }()
 	buff := new(bytes.Buffer)
 	logger := NewLogger(Folder(path), buff, 0)
-	var st Store
-	st = logger
+	st := logger
 	// Create arbitrary test data
 	testdata := "foo"
 	id := c4.Identify(strings.NewReader(testdata))

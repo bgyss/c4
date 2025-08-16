@@ -65,7 +65,7 @@ func fromSlash(path string) []byte {
 
 // Replaces all 0 with "/"
 func toSlash(path []byte) string {
-	if path == nil || len(path) == 0 {
+	if len(path) == 0 {
 		return ""
 	}
 	var strBuilder strings.Builder

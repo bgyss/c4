@@ -863,8 +863,6 @@ func (db *DB) KeyBatch(f func(*Tx) bool) {
 	}
 
 	t.close()
-
-	return
 }
 
 // write_file_data first cycles through the paths in db.storage to check
@@ -979,5 +977,4 @@ func shuffle(list []string) {
 			list[i], list[j] = list[j], list[i]
 		}
 	}
-	return
 }
