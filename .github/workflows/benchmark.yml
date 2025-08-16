@@ -9,7 +9,7 @@ on:
     - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.24'
 
 jobs:
   benchmark:
@@ -54,7 +54,7 @@ jobs:
         benchmark-data-dir-path: dev/bench
     
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: benchmark_results.txt
@@ -86,7 +86,7 @@ jobs:
         benchstat memory_bench_*.txt > memory_comparison.txt
     
     - name: Upload memory benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: memory-benchmark-results
         path: |
@@ -114,7 +114,7 @@ jobs:
         go test -bench=BenchmarkIdentify -benchmem -run=^$ ./... | tee benchmark_${{ matrix.os }}.txt
     
     - name: Upload platform-specific results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-${{ matrix.os }}
         path: benchmark_${{ matrix.os }}.txt
