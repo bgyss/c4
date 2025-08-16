@@ -488,7 +488,7 @@ func (db *DB) KeyCAS(key string, old_digest, new_digest c4.Digest) bool {
 		b := t.Bucket(c4Bucket).Bucket(keyBucket)
 		data := b.Get([]byte(key))
 
-		if bytes.Compare(data, old_digest) != 0 {
+		if !bytes.Equal(data, old_digest) {
 			return nil
 		}
 

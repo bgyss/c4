@@ -63,7 +63,7 @@ func (t *Tree) UnmarshalBinary(data []byte) error {
 	}
 	root := head[2].Sum(head[1])
 
-	if bytes.Compare([]byte(root), []byte(head[0])) != 0 {
+	if !bytes.Equal([]byte(root), []byte(head[0])) {
 		return errInvalidTree{}
 	}
 

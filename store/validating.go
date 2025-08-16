@@ -48,7 +48,7 @@ func (v *validatingReader) Read(b []byte) (int, error) {
 }
 
 func (v *validatingReader) isValid() bool {
-	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
+	if bytes.Equal(v.id[:], v.h.Sum(nil)) {
 		return true
 	}
 	return false
@@ -86,7 +86,7 @@ func (v *validatingWriter) Write(b []byte) (int, error) {
 }
 
 func (v *validatingWriter) isValid() bool {
-	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
+	if bytes.Equal(v.id[:], v.h.Sum(nil)) {
 		return true
 	}
 	return false

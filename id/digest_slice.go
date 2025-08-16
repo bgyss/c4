@@ -27,7 +27,7 @@ func (ds *DigestSlice) Insert(d Digest) int {
 	i := s.Index(d)
 
 	// d is already in the slice.
-	if i < len(s) && bytes.Compare(s[i], d) == 0 {
+	if i < len(s) && bytes.Equal(s[i], d) {
 		return -(i + 1)
 	}
 	s = append(s, nil)

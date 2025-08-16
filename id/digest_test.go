@@ -163,21 +163,21 @@ func TestDigestSum(t *testing.T) {
 
 			// Check Sum produces the expected ID
 
-			if bytes.Compare(testsum1, sum) != 0 {
+			if !bytes.Equal(testsum1, sum) {
 				t.Errorf("Digests don't match, got %q expected %q", testsum1, sum)
 			}
 			// Check that Sum did not alter l, or r
-			if bytes.Compare([]byte(r), rbytes) != 0 {
+			if !bytes.Equal([]byte(r), rbytes) {
 				t.Error("Sum altered source r")
 			}
-			if bytes.Compare([]byte(l), lbytes) != 0 {
+			if !bytes.Equal([]byte(l), lbytes) {
 				t.Error("Sum altered source l")
 			}
 			t.Logf("\t   testsum1: %s\n\t   sum: %s\n", viewBytes(testsum1), viewBytes(sum))
 
 			testsum2 := c4.Digest(pair[:64]).Sum(pair[64:])
 
-			if bytes.Compare(testsum2, sum) != 0 {
+			if !bytes.Equal(testsum2, sum) {
 				t.Errorf("IDs don't match, got %q expected %q", testsum2, sum)
 			}
 
@@ -237,7 +237,7 @@ func TestDigestSlice(t *testing.T) {
 		if n != len(data) {
 			t.Errorf("lengths do not match got %d, expected %d", n, len(data))
 		}
-		if bytes.Compare(data, test_data) != 0 {
+		if !bytes.Equal(data, test_data) {
 			t.Errorf("data doesn't match")
 		}
 
