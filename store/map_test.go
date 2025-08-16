@@ -15,7 +15,7 @@ func TestMapStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = done() }()
+	defer done()
 	m := make(map[c4.ID]string)
 	ms := NewMap(m)
 	var ids []c4.ID
@@ -67,7 +67,7 @@ func TestMapStoreOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = done() }()
+	defer done()
 	
 	m := make(map[c4.ID]string)
 	ms := NewMap(m)
