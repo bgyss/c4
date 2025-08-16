@@ -24,7 +24,7 @@
           
           src = builtins.path { path = ./.; name = "source"; };
           
-          vendorHash = "sha256-afTmUzfzaln7CmYseKBZpBO1zw0hkUpqQz9TB/ZdOpE=";
+          vendorHash = "sha256-cGB7gCnY31Gz4o8+8dM6MZikpvagt6nV1fGW/DZV98c=";
           
           subPackages = [ "cmd/c4" ];
           
@@ -49,7 +49,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             # Go development
-            go_1_23
+            go_1_24
             gotools
             gopls
             go-tools
@@ -104,7 +104,7 @@
           
           # Test check
           test = pkgs.runCommand "c4-tests" {
-            buildInputs = [ pkgs.go_1_23 ];
+            buildInputs = [ pkgs.go_1_24 ];
             src = builtins.path { path = ./.; name = "source"; };
           } ''
             cd $src
@@ -114,7 +114,7 @@
           
           # Linting check
           lint = pkgs.runCommand "c4-lint" {
-            buildInputs = [ pkgs.go_1_23 pkgs.golangci-lint ];
+            buildInputs = [ pkgs.go_1_24 pkgs.golangci-lint ];
             src = builtins.path { path = ./.; name = "source"; };
           } ''
             cd $src

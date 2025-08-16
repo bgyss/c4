@@ -54,7 +54,7 @@ func (l *Logger) Open(id c4.ID) (io.ReadCloser, error) {
 	idstr := id.String()
 	// only log if logging is enabled for this method.
 	if l.flags&LogOpen != 0 {
-		fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
+		_, _ = fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
 	}
 
 	// call the wrapped Stor's Open
@@ -62,7 +62,7 @@ func (l *Logger) Open(id c4.ID) (io.ReadCloser, error) {
 	if err != nil {
 		// only log the error if error logging is enabled.
 		if l.flags&LogError != 0 {
-			fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
+			_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
 		}
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (l *Logger) Create(id c4.ID) (io.WriteCloser, error) {
 	idstr := id.String()
 	// only log if logging is enabled for this method.
 	if l.flags&LogCreate != 0 {
-		fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
+		_, _ = fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
 	}
 
 	// call the wrapped Stor's Create
@@ -85,7 +85,7 @@ func (l *Logger) Create(id c4.ID) (io.WriteCloser, error) {
 	if err != nil {
 		// only log the error if error logging is enabled.
 		if l.flags&LogError != 0 {
-			fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
+			_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
 		}
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (l *Logger) Remove(id c4.ID) error {
 	idstr := id.String()
 	// only log if logging is enabled for this method.
 	if l.flags&LogRemove != 0 {
-		fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
+		_, _ = fmt.Fprintf(l.logout, "%s %s\n", idstr, fname)
 	}
 
 	// call the wrapped Store's Remove
@@ -108,7 +108,7 @@ func (l *Logger) Remove(id c4.ID) error {
 	if err != nil {
 		// only log the error if error logging is enabled.
 		if l.flags&LogError != 0 {
-			fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
+			_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", idstr, fname, err)
 		}
 		return err
 	}
@@ -140,7 +140,7 @@ func (l *loggingReader) Read(b []byte) (int, error) {
 	n, err := l.r.Read(b)
 	// only log if logging is enabled for this method.
 	if l.flags&LogRead != 0 {
-		fmt.Fprintf(l.logout, "%s %s %d\n", l.idstr, fname, n)
+		_, _ = fmt.Fprintf(l.logout, "%s %s %d\n", l.idstr, fname, n)
 	}
 	if err == nil {
 		return n, nil
@@ -160,7 +160,7 @@ func (l *loggingReader) Read(b []byte) (int, error) {
 			return n, err
 		}
 	}
-	fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
+	_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
 	return n, err
 }
 
@@ -171,7 +171,7 @@ func (l *loggingReader) Close() error {
 
 	// only log if logging is enabled for this method.
 	if l.flags&LogClose != 0 {
-		fmt.Fprintf(l.logout, "%s %s\n", l.idstr, fname)
+		_, _ = fmt.Fprintf(l.logout, "%s %s\n", l.idstr, fname)
 	}
 
 	// call the wrapped io.ReadCloser's Close method
@@ -190,7 +190,7 @@ func (l *loggingReader) Close() error {
 	}
 
 	// otherwise log the error before returning
-	fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
+	_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
 	return err
 }
 
@@ -218,7 +218,7 @@ func (l *loggingWriter) Write(b []byte) (int, error) {
 	n, err := l.r.Write(b)
 	// only log if logging is enabled for this method.
 	if l.flags&LogWrite != 0 {
-		fmt.Fprintf(l.logout, "%s %s %d\n", l.idstr, fname, n)
+		_, _ = fmt.Fprintf(l.logout, "%s %s %d\n", l.idstr, fname, n)
 	}
 	if err == nil {
 		return n, nil
@@ -238,7 +238,7 @@ func (l *loggingWriter) Write(b []byte) (int, error) {
 			return n, err
 		}
 	}
-	fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
+	_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
 	return n, err
 }
 
@@ -248,7 +248,7 @@ func (l *loggingWriter) Close() error {
 
 	// only log if logging is enabled for this method.
 	if l.flags&LogClose != 0 {
-		fmt.Fprintf(l.logout, "%s %s\n", l.idstr, fname)
+		_, _ = fmt.Fprintf(l.logout, "%s %s\n", l.idstr, fname)
 	}
 
 	// call the wrapped io.ReadCloser's Close method
@@ -267,6 +267,6 @@ func (l *loggingWriter) Close() error {
 	}
 
 	// otherwise log the error before returning
-	fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
+	_, _ = fmt.Fprintf(l.logout, "%s %s error %s\n", l.idstr, fname, err)
 	return err
 }
