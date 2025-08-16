@@ -123,3 +123,96 @@ func TestFolderStore(t *testing.T) {
 	}
 
 }
+
+func TestFolderStoreRemove(t *testing.T) {
+	path := os.TempDir()
+	path = filepath.Join(path, "folder_remove_test")
+	err := os.Mkdir(path, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(path)
+
+	folderStore := Folder(path)
+	
+	// Create test data
+	testData := "test data for removal"
+	id := c4.Identify(strings.NewReader(testData))
+	
+	// Create a file in the store
+	w, err := folderStore.Create(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = w.Write([]byte(testData))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = w.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Verify file exists
+	_, err = folderStore.Open(id)
+	if err != nil {
+		t.Fatal("File should exist before removal:", err)
+	}
+	
+	// Test Remove function
+	err = folderStore.Remove(id)
+	if err != nil {
+		t.Fatal("Remove should succeed:", err)
+	}
+	
+	// Verify file no longer exists
+	_, err = folderStore.Open(id)
+	if err == nil {
+		t.Error("File should not exist after removal")
+	}
+	
+	// Test removing non-existent file
+	nonExistentID := c4.Identify(strings.NewReader("non-existent"))
+	err = folderStore.Remove(nonExistentID)
+	if err == nil {
+		t.Error("Remove should fail for non-existent file")
+	}
+}
+
+func TestFolderStoreCreateExisting(t *testing.T) {
+	path := os.TempDir()
+	path = filepath.Join(path, "folder_create_existing_test")
+	err := os.Mkdir(path, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(path)
+
+	folderStore := Folder(path)
+	
+	// Create test data
+	testData := "test data for duplicate creation"
+	id := c4.Identify(strings.NewReader(testData))
+	
+	// Create a file in the store
+	w, err := folderStore.Create(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Close()
+	
+	// Try to create the same file again (should fail)
+	_, err = folderStore.Create(id)
+	if err == nil {
+		t.Error("Create should fail when file already exists")
+	}
+	
+	// Verify it's a PathError with ErrExist
+	if pathErr, ok := err.(*os.PathError); ok {
+		if pathErr.Err != os.ErrExist {
+			t.Errorf("Expected ErrExist, got: %v", pathErr.Err)
+		}
+	} else {
+		t.Errorf("Expected *os.PathError, got: %T", err)
+	}
+}

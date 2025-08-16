@@ -490,6 +490,10 @@ func (mm *M) Unmarshal(r io.Reader) error {
 			}
 			depth = i + 1
 		}
+		// Ensure currentpath has enough capacity for the depth
+		for len(currentpath) < depth {
+			currentpath = append(currentpath, "")
+		}
 		currentpath = currentpath[:depth]
 
 		if len(line) == 91 {

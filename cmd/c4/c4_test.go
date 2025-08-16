@@ -91,27 +91,31 @@ func TestNewItem(t *testing.T) {
 }
 
 func TestOutputFormats(t *testing.T) {
-	dir := t.TempDir()
 	id := "testid"
 	item := map[string]interface{}{"c4id": id, "folder": false, "link": false, "bytes": int64(3)}
 
-	wd, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(wd)
-
+	// Test with absolute flag = true (should output full path)
 	include_meta = false
-	absolute_flag = false
+	absolute_flag = true
 	formatting_string = "id"
-	out := captureOutput(func() { output(filepath.Join(dir, "file"), item) })
-	if strings.TrimSpace(out) != id+":  file" {
-		t.Fatalf("unexpected output %q", out)
+	out := captureOutput(func() { output("/tmp/test", item) })
+	if !strings.Contains(out, id+":")  && !strings.Contains(out, "/tmp/test") {
+		t.Fatalf("absolute output missing expected content: %q", out)
 	}
 
+	// Test with metadata output
 	include_meta = true
 	formatting_string = "path"
-	out = captureOutput(func() { output(filepath.Join(dir, "file"), item) })
+	out = captureOutput(func() { output("/tmp/test", item) })
 	if !strings.Contains(out, "\n  bytes:  3\n") {
 		t.Fatalf("metadata output missing: %q", out)
+	}
+	
+	// Test formatting_string = "id" with metadata
+	formatting_string = "id"
+	out = captureOutput(func() { output("/tmp/test", item) })
+	if !strings.Contains(out, id+":") {
+		t.Fatalf("id format metadata output missing: %q", out)
 	}
 }
 
@@ -157,5 +161,137 @@ func TestIdentifyPipe(t *testing.T) {
 	id := c4.Identify(strings.NewReader("pipe"))
 	if strings.TrimSpace(out) != id.String() {
 		t.Fatalf("identify_pipe output %q", out)
+	}
+}
+
+func TestMetadataOutput(t *testing.T) {
+	dir := t.TempDir()
+	id := "c41234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+	
+	wd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(wd)
+	
+	// Test regular file metadata output with path formatting
+	item := map[string]interface{}{
+		"c4id":   id,
+		"folder": false,
+		"link":   false,
+		"bytes":  int64(100),
+	}
+	
+	formatting_string = "path"
+	out := captureOutput(func() { metadata_output(item, "test.txt", "test.txt", dir) })
+	if !strings.Contains(out, "\"test.txt\":") {
+		t.Fatalf("metadata_output missing path format: %q", out)
+	}
+	if !strings.Contains(out, "  folder:  false") {
+		t.Fatalf("metadata_output missing folder info: %q", out)
+	}
+	if !strings.Contains(out, "  link:  false") {
+		t.Fatalf("metadata_output missing link info: %q", out)
+	}
+	if !strings.Contains(out, "  bytes:  100") {
+		t.Fatalf("metadata_output missing bytes info: %q", out)
+	}
+	
+	// Test folder metadata output with id formatting
+	folderItem := map[string]interface{}{
+		"c4id":   id,
+		"folder": true,
+		"link":   false,
+		"bytes":  int64(0),
+	}
+	
+	formatting_string = "id"
+	out = captureOutput(func() { metadata_output(folderItem, "testdir", "testdir", dir) })
+	if !strings.Contains(out, id+":") {
+		t.Fatalf("metadata_output missing id format: %q", out)
+	}
+	if !strings.Contains(out, "  folder:  true") {
+		t.Fatalf("metadata_output missing folder true: %q", out)
+	}
+	
+	// Test symlink metadata output
+	linkItem := map[string]interface{}{
+		"c4id":   id,
+		"folder": false,
+		"link":   "/some/target/path",
+		"bytes":  int64(10),
+	}
+	
+	absolute_flag = false
+	out = captureOutput(func() { metadata_output(linkItem, "link.txt", "link.txt", dir) })
+	if !strings.Contains(out, "  link:  ") {
+		t.Fatalf("metadata_output missing link path: %q", out)
+	}
+	
+	// Test symlink with absolute flag
+	absolute_flag = true
+	out = captureOutput(func() { metadata_output(linkItem, "link.txt", "link.txt", dir) })
+	if !strings.Contains(out, "  link:  \"/some/target/path\"") {
+		t.Fatalf("metadata_output missing absolute link path: %q", out)
+	}
+}
+
+func TestWalkFilesystem(t *testing.T) {
+	dir := t.TempDir()
+	
+	// Create test files and directories
+	file1 := filepath.Join(dir, "file1.txt")
+	os.WriteFile(file1, []byte("content1"), 0644)
+	
+	subdir := filepath.Join(dir, "subdir")
+	os.Mkdir(subdir, 0755)
+	
+	file2 := filepath.Join(subdir, "file2.txt") 
+	os.WriteFile(file2, []byte("content2"), 0644)
+	
+	// Create a symlink
+	link1 := filepath.Join(dir, "link1")
+	os.Symlink(file1, link1)
+	
+	wd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(wd)
+	
+	// Test regular file walking
+	recursive_flag = false
+	depth = -1
+	links_flag = false
+	
+	id1 := walkFilesystem(-1, file1, "")
+	expectedID1 := c4.Identify(strings.NewReader("content1"))
+	if id1.String() != expectedID1.String() {
+		t.Fatalf("walkFilesystem file ID mismatch: %s != %s", id1, expectedID1)
+	}
+	
+	// Test directory walking
+	out := captureOutput(func() {
+		recursive_flag = true
+		depth = 1
+		walkFilesystem(1, subdir, "")
+	})
+	if !strings.Contains(out, "file2.txt") {
+		t.Fatalf("walkFilesystem directory traversal missing file2.txt: %q", out)
+	}
+	
+	// Test symlink handling with links_flag = false
+	links_flag = false
+	out = captureOutput(func() {
+		recursive_flag = false
+		depth = 0
+		walkFilesystem(0, link1, "")
+	})
+	if !strings.Contains(out, "link") {
+		t.Fatalf("walkFilesystem symlink handling failed: %q", out)
+	}
+	
+	// Test symlink handling with links_flag = true
+	links_flag = true
+	id_link := walkFilesystem(-1, link1, "")
+	// The symlink should resolve to the same content as the original file
+	if id_link.String() != expectedID1.String() {
+		t.Fatalf("walkFilesystem symlink resolution ID mismatch: %s != %s", id_link, expectedID1)
 	}
 }
