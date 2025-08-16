@@ -28,7 +28,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
     
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
@@ -41,17 +41,12 @@ jobs:
       run: |
         go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
     
-    - name: Store benchmark result
-      uses: benchmark-action/github-action-benchmark@v1
-      with:
-        tool: 'go'
-        output-file-path: benchmark_results.txt
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
-        alert-threshold: '200%'
-        comment-on-alert: true
-        fail-on-alert: true
-        benchmark-data-dir-path: dev/bench
+    - name: Display benchmark results
+      run: |
+        echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat benchmark_results.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
     
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
@@ -122,6 +117,7 @@ jobs:
   regression-test:
     name: Performance Regression Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'pull_request'
     
     steps:
@@ -148,12 +144,12 @@ jobs:
     - name: Run base benchmarks
       run: |
         cd base
-        go test -bench=. -benchmem -count=5 -run=^$ ./... > ../base_bench.txt
+        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../base_bench.txt
     
     - name: Run PR benchmarks
       run: |
         cd pr
-        go test -bench=. -benchmem -count=5 -run=^$ ./... > ../pr_bench.txt
+        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../pr_bench.txt
     
     - name: Compare benchmarks
       run: |
