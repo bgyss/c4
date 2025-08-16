@@ -246,6 +246,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 				id := c4.Identify(strings.NewReader(fmt.Sprintf("data %d", j)))
 				ids = append(ids, id)
 			}
+			_ = ids // prevent unused variable warning
 		}
 	})
 }

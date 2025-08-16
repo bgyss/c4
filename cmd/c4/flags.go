@@ -26,7 +26,7 @@ func init() {
 		"  If no file is given c4 will read piped data.\n\n" +
 		"flags:\n"
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, message)
+		fmt.Fprint(os.Stderr, message)
 		flag.PrintDefaults()
 	}
 	flag.BoolVarP(&version_flag, "version", "v", false, "Show version information.")

@@ -2,10 +2,9 @@ package store
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Avalanche-io/c4"
 )
@@ -15,8 +14,7 @@ func TestValidatingStore(t *testing.T) {
 	ramst := NewRAM()
 	st = NewValidating(ramst)
 
-	rand.Seed(time.Now().UnixNano())
-	randIndx := int(rand.Int63n(100))
+	randIndx := rand.IntN(100)
 	t.Logf("random index: %d", randIndx)
 	testdata := make(map[string]c4.ID)
 	for i := 0; i < 100; i++ {

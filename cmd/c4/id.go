@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	c4 "github.com/Avalanche-io/c4/id"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func encode(src io.Reader) *c4.ID {
@@ -37,7 +37,7 @@ func nullId() *c4.ID {
 }
 
 func printID(id *c4.ID) {
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if term.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Printf("%s\n", id.String())
 	} else {
 		fmt.Printf("%s", id.String())

@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	c4 "github.com/Avalanche-io/c4/id"
 	"go.etcd.io/bbolt"
@@ -135,7 +134,7 @@ var bucketList [][]byte = [][]byte{
 }
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed is no longer needed in Go 1.20+
 }
 
 // Open opens or initializes a DB for the given path. When creating
@@ -833,12 +832,10 @@ func (db *DB) KeyBatch(f func(*Tx) bool) {
 					if err != nil {
 						return err
 					}
-					// If there was a value set on the key previously we must copy the bytes.
+					// If there was a value set on the key previously we must delete the old index.
 					if data != nil {
-						// previous = make([]byte, 64)
-						// copy(previous, data)
-						data = append(data, en.k...)
-						err := xb.Delete(xk)
+						oldxk := append(data, en.k...)
+						err := xb.Delete(oldxk)
 						if err != nil {
 							return err
 						}
@@ -972,7 +969,7 @@ func (db *DB) Batch(fn func(*bbolt.Tx) error) error {
 func shuffle(list []string) {
 	l := len(list)
 	for j, i := 0, 0; i < l; i++ {
-		j = int(rand.Int31n(int32(l)))
+		j = rand.IntN(l)
 		if j != i {
 			list[i], list[j] = list[j], list[i]
 		}

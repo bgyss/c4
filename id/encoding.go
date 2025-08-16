@@ -17,7 +17,7 @@ func (id *ID) UnmarshalBinary(data []byte) error {
 	if d == nil {
 		return errNil{}
 	}
-	id = d.ID()
+	*id = *d.ID()
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (id *ID) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
-	id = i
+	*id = *i
 	return nil
 }
 

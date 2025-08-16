@@ -3,7 +3,7 @@ package c4
 import (
 	"bytes"
 	"container/heap"
-	"math/rand"
+	"crypto/rand"
 	"sort"
 	"testing"
 )

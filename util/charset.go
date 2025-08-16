@@ -78,8 +78,8 @@ func CheckCharacterSet(a *c4.ID, b *c4.ID) (*c4.ID, error) {
 	x = a.String()[2:]
 	y = b.String()[2:]
 	for _, c := range remove_set {
-		x = strings.Replace(x, string(c), "", -1)
-		y = strings.Replace(y, string(c), "", -1)
+		x = strings.ReplaceAll(x, string(c), "")
+		y = strings.ReplaceAll(y, string(c), "")
 	}
 	newer := 0 // -1, 0, 1: a is newer, not the same, b is newer
 	for i := range x {

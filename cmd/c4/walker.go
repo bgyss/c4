@@ -10,10 +10,6 @@ import (
 
 func newItem(path string) (item map[string]interface{}) {
 	item = make(map[string]interface{})
-	if item == nil {
-		fmt.Fprintf(os.Stderr, "Unable to allocate space for file information for \"%s\".", path)
-		os.Exit(1)
-	}
 	f, err := os.Lstat(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get status for \"%s\": %s\n", path, err)
