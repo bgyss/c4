@@ -10,10 +10,10 @@ import (
 var (
 	recursive_flag    bool
 	version_flag      bool
-	arg_links         bool
+	// arg_links      bool // TODO: remove if unused - commented out flag
 	links_flag        bool
-	no_links          bool
-	summery           bool
+	// no_links       bool // TODO: remove if unused - commented out flag
+	// summery        bool // TODO: remove if unused - unused variable
 	depth             int
 	include_meta      bool
 	absolute_flag     bool

@@ -8,8 +8,8 @@ import (
 
 // Encoder generates an ID for a contiguous bock of data.
 type Encoder struct {
-	err error
-	h   hash.Hash
+	// err error // Removed unused field
+	h hash.Hash
 }
 
 // NewIDEncoder makes a new Encoder.

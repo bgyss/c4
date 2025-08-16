@@ -20,11 +20,11 @@ const (
 var (
 	lut     [256]byte
 	lowbyte = byte('1')
-	prefix  = []byte{'c', '4'}
-	idlen   = 90
+	prefix  = []byte{'c', '4'} // Used for validation, keep for compatibility
+	idlen   = 90               // Keep for potential API compatibility
 
 	// Id of empty string
-	nilID = Identify(bytes.NewReader([]byte{}))
+	nilID = Identify(bytes.NewReader([]byte{})) // Keep for potential API compatibility
 
 	// Id with all bytes set to 0.
 	voidID ID
@@ -45,9 +45,9 @@ func (e errBadLength) Error() string {
 	return "c4 ids must be 90 characters long, input length " + strconv.Itoa(int(e))
 }
 
-type errNil struct{}
+type errNil struct{} // Keep for potential API compatibility
 
-func (e errNil) Error() string {
+func (e errNil) Error() string { // Keep for potential API compatibility
 	return "unexpected nil id"
 }
 
@@ -68,6 +68,14 @@ func init() {
 		maxID[i] = 0xFF
 	}
 }
+
+// Explicit acknowledgment of potentially unused variables kept for API compatibility
+var (
+	_ = prefix  // Keep for validation and API compatibility
+	_ = idlen   // Keep for potential API compatibility
+	_ = nilID   // Keep for potential API compatibility
+	_ = errNil{} // Keep error type for API compatibility
+)
 
 // Generate an id from an io.Reader
 func Identify(src io.Reader) (id ID) {

@@ -275,23 +275,24 @@ func NewFileInfo(info os.FileInfo, ids ...c4.ID) *FileInfo {
 // 	return i
 // }
 
-func less(a, b string) bool {
-	ax := strings.LastIndex(a, "/")
-	if ax < 0 {
-		panic(fmt.Sprintf("last index x: %d %q", ax, a))
-	}
-
-	bx := strings.LastIndex(b, "/")
-	if bx < 0 {
-		panic(fmt.Sprintf("last index x: %d %q", bx, a))
-	}
-
-	if a[:ax] != b[:bx] {
-		return a[:ax] < b[:bx]
-	}
-
-	return a[ax:] < b[bx:]
-}
+// less is currently unused - TODO: remove if not needed
+// func less(a, b string) bool {
+// 	ax := strings.LastIndex(a, "/")
+// 	if ax < 0 {
+// 		panic(fmt.Sprintf("last index x: %d %q", ax, a))
+// 	}
+//
+// 	bx := strings.LastIndex(b, "/")
+// 	if bx < 0 {
+// 		panic(fmt.Sprintf("last index x: %d %q", bx, a))
+// 	}
+//
+// 	if a[:ax] != b[:bx] {
+// 		return a[:ax] < b[:bx]
+// 	}
+//
+// 	return a[ax:] < b[bx:]
+// }
 
 // 	if len(b) > len(a) {
 // 	}
