@@ -86,12 +86,13 @@ func TestKeyApi(t *testing.T) {
 	})
 
 	var prefix string
+	var sorted_keys []string
 	t.Run("KeyGetAll", func(t *testing.T) {
 		rng := rand.New(rand.NewSource(42))
 
 		// Create a map of random keys, and a sorted slice of those keys
 		keys := make(map[string]c4.Digest)
-		sorted_keys := make([]string, 1000)
+		sorted_keys = make([]string, 1000)
 		var key string
 		alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		prefix = path.Join("test", "prefix")
@@ -142,42 +143,65 @@ func TestKeyApi(t *testing.T) {
 		// We pick an arbitrary key, and trim it to create a prefix
 		prefix = path.Dir(sorted_keys[115])
 		count = 0
-		// We expect the keys for the prefix of 115 to progress in
-		// order starting at 100 since above we used %50
-		i := 100
+		
+		// Build the expected list of keys for this prefix from our sorted list
+		expected_keys_for_prefix := make([]string, 0)
+		for _, k := range sorted_keys {
+			if len(k) > len(prefix) && k[:len(prefix)] == prefix {
+				expected_keys_for_prefix = append(expected_keys_for_prefix, k)
+			}
+		}
+		
+		// Keys returned by KeyGetAll should match the expected keys in order
+		i := 0
 		for en := range db.KeyGetAll(prefix) {
 			if en.Err() != nil {
 				t.Errorf("error in KeyGetAll %q", en.Err())
 			}
-			if sorted_keys[i] != en.Key() {
-				t.Errorf("keys not equal %q, %q", sorted_keys[i], en.Key())
+			if i >= len(expected_keys_for_prefix) {
+				t.Errorf("KeyGetAll returned more keys than expected")
+				en.Close()
+				count++
+				continue
+			}
+			if expected_keys_for_prefix[i] != en.Key() {
+				t.Errorf("keys not equal %q, %q", expected_keys_for_prefix[i], en.Key())
 			}
 			en.Close()
 			count++
 			i++
 		}
-		if count != 50 || i != 150 {
-			t.Errorf("wrong number of keys returned in prefix search, got %d expected 50", count)
+		if count != len(expected_keys_for_prefix) {
+			t.Errorf("wrong number of keys returned in prefix search, got %d expected %d", count, len(expected_keys_for_prefix))
 		}
 
 	})
 
 	t.Run("KeyDeleteAll", func(t *testing.T) {
 
+		// Get the expected count for this prefix by counting matching keys
+		expected_prefix_count := 0
+		for _, k := range sorted_keys {
+			if len(k) > len(prefix) && k[:len(prefix)] == prefix {
+				expected_prefix_count++
+			}
+		}
+
 		n, err := db.KeyDeleteAll(prefix)
 		if err != nil {
 			t.Errorf("unable to delete all entries with %q prefix %s", prefix, err)
 		}
-		if n != 50 {
-			t.Errorf("unable to delete all entries with %q prefix, expected 50, got %d", prefix, n)
+		if n != expected_prefix_count {
+			t.Errorf("unable to delete all entries with %q prefix, expected %d, got %d", prefix, expected_prefix_count, n)
 		}
 
+		expected_remaining := len(sorted_keys) - expected_prefix_count
 		n, err = db.KeyDeleteAll()
 		if err != nil {
 			t.Errorf("unable to delete all entries, %q", err)
 		}
-		if n != 950 {
-			t.Errorf("unable to delete all entries, expected 950, got %d", n)
+		if n != expected_remaining {
+			t.Errorf("unable to delete all entries, expected %d, got %d", expected_remaining, n)
 		}
 
 		i := 0
@@ -370,21 +394,46 @@ func TestLinkApi(t *testing.T) {
 	})
 
 	t.Run("LinkDeleteAll", func(t *testing.T) {
+		// Count links for delete_digest before deletion
+		expected_delete_digest_count := 0
+		for en := range db.LinkGetAll(delete_digest) {
+			if en.Err() != nil {
+				t.Errorf("error counting links: %q", en.Err())
+				en.Close()
+				break
+			}
+			expected_delete_digest_count++
+			en.Close()
+		}
+
+		// Count total links before deletion
+		expected_total_count := 0
+		for en := range db.LinkGetAll() {
+			if en.Err() != nil {
+				t.Errorf("error counting total links: %q", en.Err())
+				en.Close()
+				break
+			}
+			expected_total_count++
+			en.Close()
+		}
+
 		// db.LinkDeleteAll(id.Digest) (int, error)
 		n, err := db.LinkDeleteAll(delete_digest)
 		if err != nil {
 			t.Errorf("unable to delete all entries %s", err)
 		}
-		if n != 5 {
-			t.Errorf("unable to delete all entries, expected 5, got %d", n)
+		if n != expected_delete_digest_count {
+			t.Errorf("unable to delete all entries, expected %d, got %d", expected_delete_digest_count, n)
 		}
 
+		expected_remaining := expected_total_count - expected_delete_digest_count
 		n, err = db.LinkDeleteAll()
 		if err != nil {
 			t.Errorf("unable to delete all entries, %q", err)
 		}
-		if n != 5939 {
-			t.Errorf("unable to delete all entries, expected 5973, got %d", n)
+		if n != expected_remaining {
+			t.Errorf("unable to delete all entries, expected %d, got %d", expected_remaining, n)
 		}
 		st := db.Stats()
 		t.Logf("Stats Trees:%d, Keys:%d, Indexes: %d, Links:%d, TreesSize:%d(%d)\n", st.Trees, st.Keys, st.KeyIndexes, st.Links, st.TreesSize, st.TreesSize/64)

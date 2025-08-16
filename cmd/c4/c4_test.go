@@ -15,7 +15,7 @@ func captureOutput(f func()) string {
 	old := os.Stdout
 	os.Stdout = w
 	f()
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 	out, _ := io.ReadAll(r)
 	return string(out)
@@ -127,8 +127,8 @@ func TestIdentifyFileAndFiles(t *testing.T) {
 	_ = os.WriteFile(f2, []byte("b"), 0644)
 
 	wd, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(wd)
+	_ = os.Chdir(dir)
+	defer func() { _ = os.Chdir(wd) }()
 
 	out1 := captureOutput(func() { identify_file("a.txt") })
 	id1 := c4.Identify(strings.NewReader("a"))
@@ -152,8 +152,8 @@ func TestIdentifyFileAndFiles(t *testing.T) {
 
 func TestIdentifyPipe(t *testing.T) {
 	r, w, _ := os.Pipe()
-	io.WriteString(w, "pipe")
-	w.Close()
+	_, _ = io.WriteString(w, "pipe")
+	_ = w.Close()
 	old := os.Stdin
 	os.Stdin = r
 	out := captureOutput(func() { identify_pipe() })
@@ -169,8 +169,8 @@ func TestMetadataOutput(t *testing.T) {
 	id := "c41234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 	
 	wd, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(wd)
+	_ = os.Chdir(dir)
+	defer func() { _ = os.Chdir(wd) }()
 	
 	// Test regular file metadata output with path formatting
 	item := map[string]interface{}{
@@ -239,21 +239,21 @@ func TestWalkFilesystem(t *testing.T) {
 	
 	// Create test files and directories
 	file1 := filepath.Join(dir, "file1.txt")
-	os.WriteFile(file1, []byte("content1"), 0644)
+	_ = os.WriteFile(file1, []byte("content1"), 0644)
 	
 	subdir := filepath.Join(dir, "subdir")
-	os.Mkdir(subdir, 0755)
+	_ = os.Mkdir(subdir, 0755)
 	
 	file2 := filepath.Join(subdir, "file2.txt") 
-	os.WriteFile(file2, []byte("content2"), 0644)
+	_ = os.WriteFile(file2, []byte("content2"), 0644)
 	
 	// Create a symlink
 	link1 := filepath.Join(dir, "link1")
-	os.Symlink(file1, link1)
+	_ = os.Symlink(file1, link1)
 	
 	wd, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(wd)
+	_ = os.Chdir(dir)
+	defer func() { _ = os.Chdir(wd) }()
 	
 	// Test regular file walking
 	recursive_flag = false

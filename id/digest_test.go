@@ -102,7 +102,7 @@ func TestDigestSum(t *testing.T) {
 	test_data := []testDataType{}
 	e := c4.NewEncoder()
 	for i, s := range test_vectors {
-		e.Write([]byte(s))
+		_, _ = e.Write([]byte(s))
 		dig := e.Digest()
 		id, err := c4.Parse(test_vector_ids[0][i])
 
@@ -156,7 +156,7 @@ func TestDigestSum(t *testing.T) {
 			t.Logf("\t   l: %s\n\t   r: %s\n", viewBytes(l), viewBytes(r))
 			t.Logf("\tdata: %s\n", viewBytes(data))
 
-			e.Write(data)
+			_, _ = e.Write(data)
 			testsum1 := e.Digest()
 			sum := l.Sum(r)
 			e.Reset()
@@ -197,7 +197,7 @@ func TestDigestSlice(t *testing.T) {
 	var digests c4.DigestSlice
 	e := c4.NewEncoder()
 	for _, s := range test_vectors {
-		e.Write([]byte(s))
+		_, _ = e.Write([]byte(s))
 		digests.Insert(e.Digest())
 		e.Reset()
 	}

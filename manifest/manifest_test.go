@@ -276,14 +276,14 @@ func TestMakeFileInfo(t *testing.T) {
 func TestNewDb(t *testing.T) {
 	// Create a temporary database file
 	tempFile := filepath.Join(os.TempDir(), "test_manifest.db")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 	
 	// Create a bolt database
 	db, err := bolt.Open(tempFile, 0600, nil)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	
 	// Test NewDb function
 	storagePath := "/test/storage/path"
@@ -591,7 +591,7 @@ func IdentifyFile(path string) (c4.ID, error) {
 	if err != nil {
 		return id, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	h := sha512.New()
 	_, err = io.Copy(h, f)
@@ -671,7 +671,7 @@ func TestRamFs(t *testing.T) {
 			t.Errorf("failed to write to file %q %s", path, err)
 			return
 		}
-		f.Close()
+		_ = f.Close()
 	}
 	// f, err := mfs.Open("/")
 	// if err != nil {
@@ -763,7 +763,7 @@ func TestStringSlice(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating output file %s", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	for _, line := range man {
 		f.WriteString(line + "\n")
 	}

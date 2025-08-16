@@ -96,7 +96,7 @@ func BenchmarkHalfHeapSlice(b *testing.B) {
 func randomDigest() ID {
 	var data [64]byte
 	// Create some random bytes.
-	rand.Read(data[:])
+	_, _ = rand.Read(data[:])
 
 	return Identify(bytes.NewReader(data[:]))
 }

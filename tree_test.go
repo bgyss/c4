@@ -14,7 +14,7 @@ import (
 
 func i2b(i int) []byte {
 	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, int32(i))
+	_ = binary.Write(&buf, binary.LittleEndian, int32(i))
 	return buf.Bytes()
 }
 

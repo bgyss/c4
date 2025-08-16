@@ -213,7 +213,7 @@ func (db *DB) write_options() {
 	}
 
 	// TODO: might be better just to save this as a YAML file
-	db.db.Update(func(t *bbolt.Tx) error {
+	_ = db.db.Update(func(t *bbolt.Tx) error {
 		b := t.Bucket(c4Bucket).Bucket(optionsBucket)
 		return b.Put([]byte("global/options"), data)
 	})
@@ -221,7 +221,7 @@ func (db *DB) write_options() {
 
 func (db *DB) read_options() *Options {
 	var opts *Options
-	db.db.View(func(t *bbolt.Tx) error {
+	_ = db.db.View(func(t *bbolt.Tx) error {
 		b := t.Bucket(c4Bucket).Bucket(optionsBucket)
 
 		data := b.Get([]byte("global/options"))
@@ -229,7 +229,7 @@ func (db *DB) read_options() *Options {
 			return nil
 		}
 		opts = new(Options)
-		json.Unmarshal(data, opts)
+		_ = json.Unmarshal(data, opts)
 		return nil
 	})
 	return opts
@@ -327,7 +327,7 @@ func (db *DB) KeySet(key string, digest c4.Digest) (c4.Digest, error) {
 
 func (db *DB) KeyFind(digest c4.Digest) []string {
 	var keys []string
-	db.db.View(func(t *bbolt.Tx) error {
+	_ = db.db.View(func(t *bbolt.Tx) error {
 		// Assume bucket exists and has keys
 		c := t.Bucket(c4Bucket).Bucket(indexBucket).Cursor()
 
@@ -360,7 +360,7 @@ func (db *DB) KeyDelete(key string) (c4.Digest, error) {
 	err := db.db.Update(func(t *bbolt.Tx) error {
 		b := t.Bucket(c4Bucket).Bucket(keyBucket)
 		data := b.Get([]byte(key))
-		b.Delete([]byte(key))
+		_ = b.Delete([]byte(key))
 		if data == nil {
 			return nil
 		}
@@ -448,7 +448,7 @@ func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 			close(stop)
 		}()
 
-		db.db.View(func(t *bbolt.Tx) error {
+		_ = db.db.View(func(t *bbolt.Tx) error {
 			// Assume bucket exists and has keys
 			c := t.Bucket(c4Bucket).Bucket(keyBucket).Cursor()
 
@@ -484,7 +484,7 @@ func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 // the key is updated with new_digest, KeyCAS returns `true`.
 func (db *DB) KeyCAS(key string, old_digest, new_digest c4.Digest) bool {
 	var replaced bool
-	db.db.Update(func(t *bbolt.Tx) error {
+	_ = db.db.Update(func(t *bbolt.Tx) error {
 		b := t.Bucket(c4Bucket).Bucket(keyBucket)
 		data := b.Get([]byte(key))
 
@@ -508,7 +508,7 @@ func (db *DB) KeyCAS(key string, old_digest, new_digest c4.Digest) bool {
 func (db *DB) KeyDeleteAll(key_prefixs ...string) (int, error) {
 	count := 0
 	if len(key_prefixs) == 0 {
-		db.db.Update(func(t *bbolt.Tx) error {
+		_ = db.db.Update(func(t *bbolt.Tx) error {
 			b := t.Bucket(c4Bucket).Bucket(keyBucket)
 			c := b.Cursor()
 
@@ -584,7 +584,7 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 			close(out)
 			close(stop)
 		}()
-		db.db.View(func(t *bbolt.Tx) error {
+		_ = db.db.View(func(t *bbolt.Tx) error {
 			c := t.Bucket(c4Bucket).Bucket(linkBucket).Cursor()
 
 			for k, v := c.Seek(source); k != nil && bytes.HasPrefix(k, source); k, v = c.Next() {
@@ -652,7 +652,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 			close(stop)
 		}()
 		if len(sources) == 0 {
-			db.db.View(func(t *bbolt.Tx) error {
+			_ = db.db.View(func(t *bbolt.Tx) error {
 				c := t.Bucket(c4Bucket).Bucket(linkBucket).Cursor()
 
 				for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -672,7 +672,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 			})
 		}
 		for _, source := range sources {
-			db.db.View(func(t *bbolt.Tx) error {
+			_ = db.db.View(func(t *bbolt.Tx) error {
 				c := t.Bucket(c4Bucket).Bucket(linkBucket).Cursor()
 
 				for k, v := c.Seek(source); k != nil && bytes.HasPrefix(k, source); k, v = c.Next() {
@@ -699,7 +699,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 func (db *DB) LinkDeleteAll(sources ...c4.Digest) (int, error) {
 	count := 0
 	if len(sources) == 0 {
-		db.db.Update(func(t *bbolt.Tx) error {
+		_ = db.db.Update(func(t *bbolt.Tx) error {
 			b := t.Bucket(c4Bucket).Bucket(linkBucket)
 			c := b.Cursor()
 
@@ -786,7 +786,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 			return nil
 		}
 		tree = new(c4.Tree)
-		tree.UnmarshalBinary(data)
+		_ = tree.UnmarshalBinary(data)
 		return nil
 	})
 	if len(path) > 0 {
@@ -795,7 +795,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 			return nil, err
 		}
 		tree = new(c4.Tree)
-		tree.UnmarshalBinary(data)
+		_ = tree.UnmarshalBinary(data)
 	}
 	return tree, err
 }
@@ -819,7 +819,7 @@ func (db *DB) KeyBatch(f func(*Tx) bool) {
 
 	go func() {
 		for dbin := range t.chanchan {
-			t.db.Batch(func(tx *bbolt.Tx) error {
+			_ = t.db.Batch(func(tx *bbolt.Tx) error {
 				b := tx.Bucket(c4Bucket).Bucket(keyBucket)
 				xb := tx.Bucket(c4Bucket).Bucket(indexBucket)
 				for en := range dbin {
@@ -913,8 +913,8 @@ func write_file_data(paths []string, digest c4.Digest, data []byte) (string, err
 		if err != nil {
 			continue
 		}
-		f.Write(data)
-		f.Close()
+		_, _ = f.Write(data)
+		_ = f.Close()
 		return path, nil
 	}
 

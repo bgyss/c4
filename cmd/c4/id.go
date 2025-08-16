@@ -26,13 +26,13 @@ func fileID(path string) (id *c4.ID) {
 		os.Exit(1)
 	}
 	id = encode(f)
-	f.Close()
+	_ = f.Close()
 	return
 }
 
 func nullId() *c4.ID {
 	e := c4.NewEncoder()
-	io.Copy(e, strings.NewReader(``))
+	_, _ = io.Copy(e, strings.NewReader(``))
 	return e.ID()
 }
 

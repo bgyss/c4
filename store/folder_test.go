@@ -18,7 +18,7 @@ func TestFolderStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 
 	folderStore := Folder(path)
 
@@ -60,7 +60,7 @@ func TestFolderStore(t *testing.T) {
 	}
 
 	names, err := f.Readdirnames(-1)
-	f.Close()
+	_ = f.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestFolderStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 
 	folderStore := Folder(path)
 	
@@ -186,7 +186,7 @@ func TestFolderStoreCreateExisting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 
 	folderStore := Folder(path)
 	
@@ -199,7 +199,7 @@ func TestFolderStoreCreateExisting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w.Close()
+	_ = w.Close()
 	
 	// Try to create the same file again (should fail)
 	_, err = folderStore.Create(id)

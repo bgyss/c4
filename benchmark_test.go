@@ -19,14 +19,14 @@ func BenchmarkIdentify(b *testing.B) {
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			data := make([]byte, size)
-			rand.Read(data)
+			_, _ = rand.Read(data)
 			reader := bytes.NewReader(data)
 
 			b.ResetTimer()
 			b.SetBytes(int64(size))
 
 			for i := 0; i < b.N; i++ {
-				reader.Seek(0, 0)
+				_, _ = reader.Seek(0, 0)
 				c4.Identify(reader)
 			}
 		})
@@ -137,7 +137,7 @@ func BenchmarkParse(b *testing.B) {
 // BenchmarkConcurrentIdentify benchmarks concurrent C4 identification
 func BenchmarkConcurrentIdentify(b *testing.B) {
 	data := make([]byte, 1024)
-	rand.Read(data)
+	_, _ = rand.Read(data)
 	
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -175,7 +175,7 @@ func BenchmarkLargeFileIdentify(b *testing.B) {
 			
 			// Create a large data reader
 			data := make([]byte, size)
-			rand.Read(data)
+			_, _ = rand.Read(data)
 			
 			b.StartTimer()
 			b.SetBytes(int64(size))
@@ -192,7 +192,7 @@ func BenchmarkLargeFileIdentify(b *testing.B) {
 func BenchmarkStreamingIdentify(b *testing.B) {
 	b.Run("ChunkedReader", func(b *testing.B) {
 		data := make([]byte, 10*1024) // 10KB
-		rand.Read(data)
+		_, _ = rand.Read(data)
 		
 		b.SetBytes(int64(len(data)))
 		

@@ -19,7 +19,7 @@ func TestLoggerStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 	buff := new(bytes.Buffer)
 	logger := NewLogger(Folder(path), buff, 0)
 	var st Store
@@ -96,7 +96,7 @@ func TestLoggerStore(t *testing.T) {
 		t.Errorf("log output for Read does not match expected")
 	}
 
-	f.Close()
+	_ = f.Close()
 	n, _ = buff.Read(data)
 	if string(data[:n]) != fmt.Sprintf("%s Close\n", id) {
 		t.Errorf("log output for Close does not match expected")
@@ -110,7 +110,7 @@ func TestLoggerStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 	
 	buff := new(bytes.Buffer)
 	logger := NewLogger(Folder(path), buff, LogRemove|LogError|LogCreate|LogWrite|LogClose)
@@ -125,7 +125,7 @@ func TestLoggerStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _ = w.Write([]byte(testdata))
-	w.Close()
+	_ = w.Close()
 	
 	// Clear the buffer
 	buff.Reset()
@@ -158,7 +158,7 @@ func TestLoggerStoreErrorCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 	
 	buff := new(bytes.Buffer)
 	logger := NewLogger(Folder(path), buff, LogRemove|LogError|LogOpen|LogCreate)
@@ -216,7 +216,7 @@ func TestLoggerWriterErrorCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 	
 	buff := new(bytes.Buffer)
 	logger := NewLogger(Folder(path), buff, 0)
