@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -791,7 +790,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 		return nil
 	})
 	if len(path) > 0 {
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}

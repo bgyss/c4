@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -58,7 +57,7 @@ func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID
 		}
 	} else {
 		if item["folder"] == true {
-			files, err := ioutil.ReadDir(path)
+			files, err := os.ReadDir(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to read directory: %v\n", err)
 				os.Exit(1)

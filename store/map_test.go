@@ -15,7 +15,7 @@ func TestMapStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 	m := make(map[c4.ID]string)
 	ms := NewMap(m)
 	var ids []c4.ID
@@ -27,7 +27,7 @@ func TestMapStore(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err = f.WriteString(data)
-		f.Close()
+		_ = f.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,7 +54,7 @@ func TestMapStore(t *testing.T) {
 			t.Fatal(err)
 		}
 		testid := c4.Identify(f)
-		f.Close()
+		_ = f.Close()
 		if testid != id {
 			t.Fatalf("wrong id content %d", i)
 		}
@@ -67,7 +67,7 @@ func TestMapStoreOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 	
 	m := make(map[c4.ID]string)
 	ms := NewMap(m)
@@ -83,7 +83,7 @@ func TestMapStoreOperations(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _ = f.WriteString(testData)
-	f.Close()
+	_ = f.Close()
 	
 	// Test LoadOrStore with new ID
 	actual, loaded := ms.LoadOrStore(id, testFile)
@@ -127,7 +127,7 @@ func TestMapStoreOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writer.Close()
+	_ = writer.Close()
 	
 	// Verify the created file
 	if _, err := os.Stat(newFile); os.IsNotExist(err) {
@@ -177,6 +177,6 @@ func MkTmp(name string) (string, func(), error) {
 	}
 
 	return path, func() {
-		os.RemoveAll(path)
+		_ = os.RemoveAll(path)
 	}, nil
 }

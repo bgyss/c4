@@ -193,7 +193,8 @@ var data [16]byte
 // utility to create a random c4.Digest
 func randomDigest() Digest {
 	// Create some random bytes.
-	rand.Read(data[:])
+	rng := rand.New(rand.NewSource(rand.Int63()))
+	_, _ = rng.Read(data[:])
 	e.Reset()
 	_, _ = e.Write(data[:])
 	return e.ID().Digest()

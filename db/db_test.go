@@ -2,15 +2,13 @@ package db_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
-
-	"os"
 	"testing"
 
 	"github.com/Avalanche-io/c4/db"
@@ -18,7 +16,7 @@ import (
 )
 
 func mkdb(name string, t *testing.T) (*db.DB, func() error, error) {
-	dir, err := ioutil.TempDir("", "c4_tests")
+	dir, err := os.MkdirTemp("", "c4_tests")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -44,7 +42,7 @@ func TestKeyApi(t *testing.T) {
 	if err != nil {
 		t.Errorf("error opening db at %q: %q", db_filename, err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 
 	t.Run("Key Set, Get, Find, Delete", func(t *testing.T) {
 		id := c4.Identify(strings.NewReader("foo"))
@@ -89,7 +87,7 @@ func TestKeyApi(t *testing.T) {
 
 	var prefix string
 	t.Run("KeyGetAll", func(t *testing.T) {
-		rand.Seed(42)
+		rng := rand.New(rand.NewSource(42))
 
 		// Create a map of random keys, and a sorted slice of those keys
 		keys := make(map[string]c4.Digest)
@@ -103,11 +101,11 @@ func TestKeyApi(t *testing.T) {
 			// the sorting a little more interesting, and more representative of
 			// actual use.
 			if i%50 == 0 {
-				key = path.Join(prefix, string(alphabet[rand.Int()%len(alphabet)]))
+				key = path.Join(prefix, string(alphabet[rng.Int()%len(alphabet)]))
 			}
 
 			// Setting key, and value
-			k := path.Join(key, strconv.Itoa(rand.Int()))
+			k := path.Join(key, strconv.Itoa(rng.Int()))
 			v := randomDigest()
 			sorted_keys[i] = k
 			keys[k] = v
@@ -239,7 +237,7 @@ func TestLinkApi(t *testing.T) {
 	if err != nil {
 		t.Errorf("error opening db at %q: %q", db_filename, err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 
 	_ = db
 
@@ -286,7 +284,7 @@ func TestLinkApi(t *testing.T) {
 
 	var delete_digest c4.Digest
 	t.Run("LinkGetAll", func(t *testing.T) {
-		rand.Seed(42)
+		rng := rand.New(rand.NewSource(42))
 		// Create a slice of "source" digests
 		digests := make([]c4.Digest, 1000)
 		for i := range digests {
@@ -302,7 +300,7 @@ func TestLinkApi(t *testing.T) {
 		expected_count := 0
 		for _, digest := range digests {
 			for _, relationship := range relationships {
-				targets := make([]c4.Digest, rand.Int()%3+1)
+				targets := make([]c4.Digest, rng.Int()%3+1)
 				for k := range targets {
 					targets[k] = randomDigest()
 					expected_count++
@@ -412,7 +410,7 @@ func TestTreeApi(t *testing.T) {
 	if err != nil {
 		t.Errorf("error opening db at %q: %q", db_filename, err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 
 	_ = db
 
@@ -467,7 +465,7 @@ func TestBatching(t *testing.T) {
 	if err != nil {
 		t.Errorf("error opening db at %q: %q", db_filename, err)
 	}
-	defer done()
+	defer func() { _ = done() }()
 
 	c4db.KeyBatch(func(tx *db.Tx) bool {
 		for i := 0; i < 100000; i++ {
@@ -493,6 +491,7 @@ func TestBatching(t *testing.T) {
 func randomDigest() c4.Digest {
 	// Create some random bytes.
 	var data [8]byte
-	rand.Read(data[:])
+	rng := rand.New(rand.NewSource(rand.Int63()))
+	_, _ = rng.Read(data[:])
 	return c4.Identify(bytes.NewReader(data[:])).Digest()
 }
