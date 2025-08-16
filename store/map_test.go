@@ -82,7 +82,7 @@ func TestMapStoreOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.WriteString(testData)
+	_, _ = f.WriteString(testData)
 	f.Close()
 	
 	// Test LoadOrStore with new ID

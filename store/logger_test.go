@@ -124,7 +124,7 @@ func TestLoggerStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w.Write([]byte(testdata))
+	_, _ = w.Write([]byte(testdata))
 	w.Close()
 	
 	// Clear the buffer

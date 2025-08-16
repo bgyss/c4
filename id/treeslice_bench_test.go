@@ -195,6 +195,6 @@ func randomDigest() Digest {
 	// Create some random bytes.
 	rand.Read(data[:])
 	e.Reset()
-	e.Write(data[:])
+	_, _ = e.Write(data[:])
 	return e.ID().Digest()
 }

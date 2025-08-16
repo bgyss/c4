@@ -46,7 +46,7 @@ func TestEncodeAndNullID(t *testing.T) {
 func TestFileID(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "f")
-	os.WriteFile(path, []byte("bar"), 0644)
+	_ = os.WriteFile(path, []byte("bar"), 0644)
 	id := fileID(path)
 	expected := c4.Identify(strings.NewReader("bar"))
 	if id.String() != expected.String() {
@@ -65,7 +65,7 @@ func TestPrintID(t *testing.T) {
 func TestNewItem(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "file")
-	os.WriteFile(path, []byte("abc"), 0644)
+	_ = os.WriteFile(path, []byte("abc"), 0644)
 	item := newItem(path)
 	if item["folder"].(bool) {
 		t.Fatal("expected file not folder")
@@ -83,7 +83,7 @@ func TestNewItem(t *testing.T) {
 	}
 
 	link := filepath.Join(dir, "lnk")
-	os.Symlink(path, link)
+	_ = os.Symlink(path, link)
 	litem := newItem(link)
 	if !litem["link"].(bool) {
 		t.Fatal("expected link true")
@@ -122,9 +122,9 @@ func TestOutputFormats(t *testing.T) {
 func TestIdentifyFileAndFiles(t *testing.T) {
 	dir := t.TempDir()
 	f1 := filepath.Join(dir, "a.txt")
-	os.WriteFile(f1, []byte("a"), 0644)
+	_ = os.WriteFile(f1, []byte("a"), 0644)
 	f2 := filepath.Join(dir, "b.txt")
-	os.WriteFile(f2, []byte("b"), 0644)
+	_ = os.WriteFile(f2, []byte("b"), 0644)
 
 	wd, _ := os.Getwd()
 	os.Chdir(dir)
