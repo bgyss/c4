@@ -662,9 +662,18 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 
 				for k, v := c.First(); k != nil; k, v = c.Next() {
 					ent := entry_pool.Get().(*entry)
-					ent.k = k[:64]
-					ent.v = k[64:]
-					ent.r = v // relationship
+					// Make a copy of the source data to avoid race conditions
+					source := make([]byte, 64)
+					copy(source, k[:64])
+					ent.k = source
+					// Make a copy of the target data to avoid race conditions
+					target := make([]byte, len(k[64:]))
+					copy(target, k[64:])
+					ent.v = target
+					// Make a copy of the relationship data to avoid race conditions
+					rel := make([]byte, len(v))
+					copy(rel, v)
+					ent.r = rel
 
 					select {
 					case out <- ent:
@@ -682,9 +691,18 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 
 				for k, v := c.Seek(source); k != nil && bytes.HasPrefix(k, source); k, v = c.Next() {
 					ent := entry_pool.Get().(*entry)
-					ent.k = source
-					ent.v = k[64:]
-					ent.r = v // relationship
+					// Make a copy of the source data to avoid race conditions
+					sourceCopy := make([]byte, len(source))
+					copy(sourceCopy, source)
+					ent.k = sourceCopy
+					// Make a copy of the target data to avoid race conditions
+					target := make([]byte, len(k[64:]))
+					copy(target, k[64:])
+					ent.v = target
+					// Make a copy of the relationship data to avoid race conditions
+					rel := make([]byte, len(v))
+					copy(rel, v)
+					ent.r = rel
 
 					select {
 					case out <- ent:

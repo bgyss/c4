@@ -33,7 +33,7 @@ jobs:
     
     - name: Clear Go cache for CI consistency
       run: |
-        go clean -cache -modcache -testcache
+        go clean -cache -testcache
         echo "Cleared Go caches for clean CI run"
     
     - name: Download dependencies
