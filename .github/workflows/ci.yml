@@ -72,6 +72,7 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: bgyss/c4
+        
   build:
     name: Build
     runs-on: ${{ matrix.os }}
