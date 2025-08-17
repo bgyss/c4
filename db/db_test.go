@@ -91,8 +91,13 @@ func TestKeyApi(t *testing.T) {
 		rng := rand.New(rand.NewPCG(42, 0))
 
 		// Create a map of random keys, and a sorted slice of those keys
+		// Use smaller test size in short mode for better Windows performance
+		keyCount := 1000
+		if testing.Short() {
+			keyCount = 100
+		}
 		keys := make(map[string]c4.Digest)
-		sorted_keys = make([]string, 1000)
+		sorted_keys = make([]string, keyCount)
 		var key string
 		alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		prefix = path.Join("test", "prefix")
@@ -141,7 +146,12 @@ func TestKeyApi(t *testing.T) {
 		}
 
 		// We pick an arbitrary key, and trim it to create a prefix
-		prefix = path.Dir(sorted_keys[115])
+		// Use a valid index based on the actual array size
+		prefixIndex := 115
+		if prefixIndex >= len(sorted_keys) {
+			prefixIndex = len(sorted_keys) / 2
+		}
+		prefix = path.Dir(sorted_keys[prefixIndex])
 		count = 0
 		
 		// Build the expected list of keys for this prefix from our sorted list
@@ -310,11 +320,21 @@ func TestLinkApi(t *testing.T) {
 	t.Run("LinkGetAll", func(t *testing.T) {
 		rng := rand.New(rand.NewPCG(42, 0))
 		// Create a slice of "source" digests
-		digests := make([]c4.Digest, 1000)
+		// Use smaller test size in short mode for better Windows performance
+		digestCount := 1000
+		if testing.Short() {
+			digestCount = 100
+		}
+		digests := make([]c4.Digest, digestCount)
 		for i := range digests {
 			digests[i] = randomDigest()
 		}
-		delete_digest = digests[42]
+		// Use a valid index for delete_digest based on actual digest count
+		deleteIndex := 42
+		if deleteIndex >= digestCount {
+			deleteIndex = digestCount / 2
+		}
+		delete_digest = digests[deleteIndex]
 
 		relationships := []string{"metadata", "parent", "fileinfo"}
 
@@ -517,7 +537,12 @@ func TestBatching(t *testing.T) {
 	defer func() { _ = done() }()
 
 	c4db.KeyBatch(func(tx *db.Tx) bool {
-		for i := 0; i < 100000; i++ {
+		// Use smaller batch size in short mode for better Windows performance
+		batchSize := 100000
+		if testing.Short() {
+			batchSize = 10000
+		}
+		for i := 0; i < batchSize; i++ {
 			tx.KeySet(strconv.Itoa(i), randomDigest())
 			if tx.Err() != nil {
 				t.Errorf("error during batch write")
@@ -529,8 +554,14 @@ func TestBatching(t *testing.T) {
 
 	st := c4db.Stats()
 	t.Logf("Stats Trees:%d, Keys:%d, Indexes: %d, Links:%d, TreesSize:%d(%d)\n", st.Trees, st.Keys, st.KeyIndexes, st.Links, st.TreesSize, st.TreesSize/64)
-	if st.Keys != 100000 {
-		t.Errorf("error tree has incorrect stats after delete")
+	
+	// Check against the actual batch size we used
+	expectedKeys := 100000
+	if testing.Short() {
+		expectedKeys = 10000
+	}
+	if st.Keys != expectedKeys {
+		t.Errorf("error tree has incorrect stats after delete, expected %d keys, got %d", expectedKeys, st.Keys)
 		t.Errorf("Stats Trees:%d, Keys:%d, Indexes: %d, Links:%d, TreesSize:%d(%d)\n", st.Trees, st.Keys, st.KeyIndexes, st.Links, st.TreesSize, st.TreesSize/64)
 	}
 

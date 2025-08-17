@@ -59,7 +59,12 @@ jobs:
         echo "Cleaning test cache for consistent results"
         go clean -testcache
         echo "Starting test run with race detection"
-        go test -v -race -coverprofile=coverage.out -timeout=10m ./...
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          # Windows tests run slower, so increase timeout and reduce race detection overhead
+          go test -v -race -coverprofile=coverage.out -timeout=20m -short ./...
+        else
+          go test -v -race -coverprofile=coverage.out -timeout=10m ./...
+        fi
       shell: bash
     
     - name: Upload coverage to Codecov

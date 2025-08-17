@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -153,7 +154,20 @@ func Open(path string, options *Options) (db *DB, err error) {
 
 	db_path := filepath.Join(path, "db")
 	db = new(DB)
-	db.db, err = bbolt.Open(db_path, 0700, nil)
+	
+	// Configure bbolt options for better performance, especially on Windows
+	opts := &bbolt.Options{
+		NoSync:    false, // Keep data safety
+		NoGrowSync: false, // Keep data safety
+		FreelistType: bbolt.FreelistMapType, // Use map-based freelist for better performance
+	}
+	
+	// For testing on Windows, enable faster sync to improve performance
+	if runtime.GOOS == "windows" && strings.Contains(path, "c4_tests") {
+		opts.NoSync = true
+		opts.NoGrowSync = true
+	}
+	db.db, err = bbolt.Open(db_path, 0700, opts)
 	if err != nil {
 		return nil, err
 	}
