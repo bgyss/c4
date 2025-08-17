@@ -20,7 +20,7 @@
         # Build the c4 CLI tool
         c4 = pkgs.buildGoModule {
           pname = "c4";
-          version = "0.8";
+          version = "0.8.1";
           
           src = builtins.path { path = ./.; name = "source"; };
           
