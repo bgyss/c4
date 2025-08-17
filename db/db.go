@@ -432,16 +432,22 @@ func (e *entry) Close() {
 }
 
 func (e *entry) Source() c4.Digest {
-	return c4.Digest(e.k)
+	data := make([]byte, len(e.k))
+	copy(data, e.k)
+	return c4.Digest(data)
 }
 
 func (e *entry) Target() c4.Digest {
-	return c4.Digest(e.v)
+	data := make([]byte, len(e.v))
+	copy(data, e.v)
+	return c4.Digest(data)
 }
 
 // TODO: there may be more than one relationship for a given link
 func (e *entry) Relationships() []string {
-	return []string{string(e.r)}
+	data := make([]byte, len(e.r))
+	copy(data, e.r)
+	return []string{string(data)}
 }
 
 func (e *entry) Err() error {
