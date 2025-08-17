@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest]
         go-version: ['1.24']
     
     steps:
@@ -163,12 +163,12 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        go test -coverprofile=coverage.out ./...
-        go tool cover -html=coverage.out -o coverage.html
+        go test -coverprofile=coverage.txt ./...
+        go tool cover -html=coverage.txt -o coverage.html
     
     - name: Check coverage threshold
       run: |
-        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
         echo "Current coverage: $COVERAGE%"
         if (( $(echo "$COVERAGE < 75.0" | bc -l) )); then
           echo "Coverage $COVERAGE% is below threshold of 75%"
@@ -180,7 +180,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
-        path: coverage.html
+        path: |
+          coverage.txt
+          coverage.html
 
   dependency-check:
     name: Dependency Check
