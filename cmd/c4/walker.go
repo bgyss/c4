@@ -2,19 +2,14 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func newItem(path string) (item map[string]interface{}) {
 	item = make(map[string]interface{})
-	if item == nil {
-		fmt.Fprintf(os.Stderr, "Unable to allocate space for file information for \"%s\".", path)
-		os.Exit(1)
-	}
 	f, err := os.Lstat(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get status for \"%s\": %s\n", path, err)
@@ -58,7 +53,7 @@ func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID
 		}
 	} else {
 		if item["folder"] == true {
-			files, err := ioutil.ReadDir(path)
+			files, err := os.ReadDir(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to read directory: %v\n", err)
 				os.Exit(1)

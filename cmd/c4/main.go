@@ -26,7 +26,7 @@ func main() {
 
 	if len(file_list) == 0 {
 		identify_pipe()
-	} else if len(file_list) == 1 && !(recursive_flag || include_meta) && depth == 0 {
+	} else if len(file_list) == 1 && !recursive_flag && !include_meta && depth == 0 {
 		identify_file(file_list[0])
 	} else {
 		identify_files(file_list)

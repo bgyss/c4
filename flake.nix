@@ -24,7 +24,7 @@
           
           src = builtins.path { path = ./.; name = "source"; };
           
-          vendorHash = "sha256-afTmUzfzaln7CmYseKBZpBO1zw0hkUpqQz9TB/ZdOpE=";
+          vendorHash = "sha256-fzJHYxRHVGHZsIJ5Xi52R7j/hRQEiF+h7Sbm6DH0M5o=";
           
           subPackages = [ "cmd/c4" ];
           
@@ -32,7 +32,7 @@
           
           meta = with pkgs.lib; {
             description = "Go implementation of SMPTE ST 2114:2017 for universally unique and consistent identifiers";
-            homepage = "https://github.com/Avalanche-io/c4";
+            homepage = "https://github.com/bgyss/c4";
             license = licenses.asl20;
             maintainers = [ ];
             mainProgram = "c4";
@@ -49,7 +49,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             # Go development
-            go_1_23
+            go_1_24
             gotools
             gopls
             go-tools
@@ -60,6 +60,7 @@
             # Code formatting and linting
             golangci-lint
             gofumpt
+            gosec
             
             # Build tools
             gnumake
@@ -79,6 +80,7 @@
             echo "  go test ./...              - Run all tests"
             echo "  go test -cover ./...       - Run tests with coverage"
             echo "  golangci-lint run          - Run linter"
+            echo "  gosec ./...                - Run security scanner"
             echo ""
             echo "CLI usage after building:"
             echo "  ./c4 filename.txt          - Generate C4 ID from file"
@@ -104,7 +106,7 @@
           
           # Test check
           test = pkgs.runCommand "c4-tests" {
-            buildInputs = [ pkgs.go_1_23 ];
+            buildInputs = [ pkgs.go_1_24 ];
             src = builtins.path { path = ./.; name = "source"; };
           } ''
             cd $src
@@ -114,11 +116,21 @@
           
           # Linting check
           lint = pkgs.runCommand "c4-lint" {
-            buildInputs = [ pkgs.go_1_23 pkgs.golangci-lint ];
+            buildInputs = [ pkgs.go_1_24 pkgs.golangci-lint ];
             src = builtins.path { path = ./.; name = "source"; };
           } ''
             cd $src
             golangci-lint run
+            touch $out
+          '';
+          
+          # Security check
+          security = pkgs.runCommand "c4-security" {
+            buildInputs = [ pkgs.go_1_24 pkgs.gosec ];
+            src = builtins.path { path = ./.; name = "source"; };
+          } ''
+            cd $src
+            gosec ./...
             touch $out
           '';
         };

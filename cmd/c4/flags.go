@@ -10,10 +10,10 @@ import (
 var (
 	recursive_flag    bool
 	version_flag      bool
-	arg_links         bool
+	// arg_links      bool // TODO: remove if unused - commented out flag
 	links_flag        bool
-	no_links          bool
-	summery           bool
+	// no_links       bool // TODO: remove if unused - commented out flag
+	// summery        bool // TODO: remove if unused - unused variable
 	depth             int
 	include_meta      bool
 	absolute_flag     bool
@@ -26,7 +26,7 @@ func init() {
 		"  If no file is given c4 will read piped data.\n\n" +
 		"flags:\n"
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, message)
+		fmt.Fprint(os.Stderr, message)
 		flag.PrintDefaults()
 	}
 	flag.BoolVarP(&version_flag, "version", "v", false, "Show version information.")

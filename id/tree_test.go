@@ -6,14 +6,14 @@ import (
 	// "fmt"
 	"testing"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func TestTree(t *testing.T) {
 	var digests c4.DigestSlice
 	e := c4.NewEncoder()
 	for _, s := range test_vectors {
-		e.Write([]byte(s))
+		_, _ = e.Write([]byte(s))
 		digests.Insert(e.Digest())
 		e.Reset()
 	}

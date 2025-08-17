@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
-	c4 "github.com/Avalanche-io/c4/id"
-	"golang.org/x/crypto/ssh/terminal"
+	c4 "github.com/bgyss/c4/id"
+	"golang.org/x/term"
 )
 
 func encode(src io.Reader) *c4.ID {
@@ -20,24 +21,26 @@ func encode(src io.Reader) *c4.ID {
 }
 
 func fileID(path string) (id *c4.ID) {
-	f, err := os.Open(path)
+	// Clean the path to prevent issues with malformed paths
+	cleanPath := filepath.Clean(path)
+	f, err := os.Open(cleanPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to identify %s. %v\n", path, err)
 		os.Exit(1)
 	}
 	id = encode(f)
-	f.Close()
+	_ = f.Close()
 	return
 }
 
 func nullId() *c4.ID {
 	e := c4.NewEncoder()
-	io.Copy(e, strings.NewReader(``))
+	_, _ = io.Copy(e, strings.NewReader(``))
 	return e.ID()
 }
 
 func printID(id *c4.ID) {
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if term.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Printf("%s\n", id.String())
 	} else {
 		fmt.Printf("%s", id.String())

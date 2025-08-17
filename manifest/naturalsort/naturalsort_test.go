@@ -2,12 +2,12 @@ package naturalsort_test
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"sort"
 	"strconv"
 	"testing"
 
-	natural "github.com/Avalanche-io/c4/manifest/naturalsort"
+	natural "github.com/bgyss/c4/manifest/naturalsort"
 )
 
 // updated, delete me
@@ -184,7 +184,7 @@ func shuffle(format string, size int) []string {
 	list := make([]string, size)
 	for j, i := 0, 0; i < size; i++ {
 		if i > 0 {
-			j = int(rand.Int31n(int32(i)))
+			j = rand.IntN(i)
 		}
 		if j != i {
 			list[i] = list[j]

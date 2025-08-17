@@ -12,7 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 	"github.com/xtgo/set"
 )
 
@@ -308,7 +308,7 @@ func viewBytes(b []byte) string {
 		num := strconv.Itoa(int(b[j]))
 		out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 	}
-	out += fmt.Sprintf(" ... ")
+	out += " ... "
 	offset := 64 - length
 	if len(b) >= 128 {
 		for j := 64 - length; j < 64+length; j++ {
@@ -319,7 +319,7 @@ func viewBytes(b []byte) string {
 			out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 		}
 		offset = 128 - length
-		out += fmt.Sprintf(" ... ")
+		out += " ... "
 	}
 	for j := offset; j < offset+length; j++ {
 		num := strconv.Itoa(int(b[j]))
@@ -398,10 +398,10 @@ func TestDigestSum(t *testing.T) {
 				t.Errorf("Digests don't match, got %q expected %q", testsum1, sum)
 			}
 			// Check that Sum did not alter l, or r
-			if bytes.Compare(r[:], rbytes[:]) != 0 {
+			if !bytes.Equal(r[:], rbytes[:]) {
 				t.Error("Sum altered source r")
 			}
-			if bytes.Compare(l[:], lbytes) != 0 {
+			if !bytes.Equal(l[:], lbytes) {
 				t.Errorf("Sum altered source l")
 			}
 			t.Logf("\t   testsum1: %s\n\t   sum: %s\n", viewBytes(testsum1[:]), viewBytes(sum[:]))

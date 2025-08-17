@@ -3,7 +3,7 @@ package id
 import (
 	"bytes"
 	"errors"
-	"fmt"
+	// "fmt" // Removed unused import
 	"sort"
 )
 
@@ -27,7 +27,7 @@ func (ds *DigestSlice) Insert(d Digest) int {
 	i := s.Index(d)
 
 	// d is already in the slice.
-	if i < len(s) && bytes.Compare(s[i], d) == 0 {
+	if i < len(s) && bytes.Equal(s[i], d) {
 		return -(i + 1)
 	}
 	s = append(s, nil)
@@ -79,11 +79,12 @@ func (ds *DigestSlice) Index(x Digest) int {
 	return sort.Search(len(s), func(i int) bool { return bytes.Compare(s[i], x) >= 0 })
 }
 
-func print(s []Digest) {
-	for i, dig := range s {
-		fmt.Printf("%d: %s\n", i, Digest(dig).ID())
-	}
-}
+// print is currently unused - TODO: remove if not needed for debugging
+// func print(s []Digest) {
+// 	for i, dig := range s {
+// 		fmt.Printf("%d: %s\n", i, Digest(dig).ID())
+// 	}
+// }
 
 // Read implements the io.Reader interface to output the bytes of the
 // DigestSlice. Read returns an error if p is not large enough to hold the

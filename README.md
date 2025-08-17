@@ -2,13 +2,15 @@
 # C4 ID - Universally Unique and Consistent Identification
 
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/Avalanche-io/c4)](https://goreportcard.com/report/github.com/Avalanche-io/c4)
-[![Build Status](https://travis-ci.org/Avalanche-io/c4.svg?branch=master)](https://travis-ci.org/Avalanche-io/c4)
-[![GoDoc](https://godoc.org/github.com/Avalanche-io/c4?status.svg)](https://godoc.org/github.com/avalanche-io/c4)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bgyss/c4)](https://goreportcard.com/report/github.com/bgyss/c4)
+[![CI](https://github.com/bgyss/c4/workflows/CI/badge.svg)](https://github.com/bgyss/c4/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bgyss/c4/branch/master/graph/badge.svg)](https://codecov.io/gh/bgyss/c4)
+[![GoDoc](https://godoc.org/github.com/bgyss/c4?status.svg)](https://godoc.org/github.com/avalanche-io/c4)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Release](https://img.shields.io/github/release/bgyss/c4.svg)](https://github.com/bgyss/c4/releases/latest)
 
 ```go
-import "github.com/Avalanche-io/c4"
+import "github.com/bgyss/c4"
 ```
 
 This is a Go package that implements the C4 ID system **SMPTE standard ST 2114:2017**. C4 IDs are universally unique and consistent identifiers that standardize the derivation and formatting of data identification so that all users independently agree on the identification of any block or set of blocks of data.
@@ -47,7 +49,7 @@ import (
   "fmt"
   "strings"
 
-  "github.com/Avalanche-io/c4"
+  "github.com/bgyss/c4"
 )
 
 func main() {
@@ -157,9 +159,76 @@ go test ./...
 
 ---
 
+## Testing & Quality
+
+### Running Tests
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run tests with verbose output
+go test -v ./...
+
+# Run benchmarks
+go test -bench=. -run=^$ ./...
+```
+
+### Coverage Reports
+
+The project maintains high test coverage across all packages:
+
+- **Overall Coverage**: ~78%
+- **Core Package**: 92.4%
+- **Store Package**: 80.9%
+- **Manifest Package**: 72.9%
+- **Util Package**: 100%
+
+### Performance Benchmarks
+
+Performance benchmarks are run continuously to track regression:
+
+```bash
+# Run core performance benchmarks
+go test -bench=BenchmarkIdentify -benchmem ./...
+
+# Run memory allocation benchmarks
+go test -bench=BenchmarkMemoryAllocation -benchmem ./...
+
+# Run platform-specific benchmarks
+go test -bench=. -benchmem ./...
+```
+
+### Code Quality
+
+The project uses several tools to maintain code quality:
+
+- **golangci-lint**: Comprehensive linting with 20+ enabled linters
+- **gosec**: Security vulnerability scanning
+- **govulncheck**: Dependency vulnerability checking
+- **gofmt**: Code formatting consistency
+- **go vet**: Static analysis for potential issues
+
+### Continuous Integration
+
+All code is validated through GitHub Actions CI/CD:
+
+- ✅ Multi-platform testing (Linux, macOS, Windows)
+- ✅ Multi-version Go support (1.20, 1.21)
+- ✅ Automated security scanning
+- ✅ Performance regression testing
+- ✅ Coverage reporting
+- ✅ Dependency vulnerability checks
+- ✅ Nix build validation
+
+---
+
 ### Releases
 
-Current release: [v0.8.0](https://github.com/Avalanche-io/c4/tree/v0.8.0)
+Current release: [v0.8.0](https://github.com/bgyss/c4/tree/v0.8.0)
 
 ### Links
 

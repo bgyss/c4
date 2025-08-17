@@ -17,7 +17,7 @@ func (id *ID) UnmarshalBinary(data []byte) error {
 	if d == nil {
 		return errNil{}
 	}
-	id = d.ID()
+	*id = *d.ID()
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (id *ID) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
-	id = i
+	*id = *i
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (t *Tree) UnmarshalBinary(data []byte) error {
 	}
 	root := head[2].Sum(head[1])
 
-	if bytes.Compare([]byte(root), []byte(head[0])) != 0 {
+	if !bytes.Equal([]byte(root), []byte(head[0])) {
 		return errInvalidTree{}
 	}
 

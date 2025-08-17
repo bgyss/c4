@@ -7,7 +7,7 @@ import (
 	"hash"
 	"io"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 var _ Store = &Validating{}
@@ -48,10 +48,7 @@ func (v *validatingReader) Read(b []byte) (int, error) {
 }
 
 func (v *validatingReader) isValid() bool {
-	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
-		return true
-	}
-	return false
+	return bytes.Equal(v.id[:], v.h.Sum(nil))
 }
 
 func (v *validatingReader) Close() error {
@@ -77,8 +74,8 @@ func (v *validatingWriter) Write(b []byte) (int, error) {
 	}
 	if err == io.EOF {
 		if !v.isValid() {
-			v.w.Close()
-			v.remove(v.id)
+			_ = v.w.Close()
+			_ = v.remove(v.id)
 			return n, ErrInvalidID
 		}
 	}
@@ -86,16 +83,13 @@ func (v *validatingWriter) Write(b []byte) (int, error) {
 }
 
 func (v *validatingWriter) isValid() bool {
-	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
-		return true
-	}
-	return false
+	return bytes.Equal(v.id[:], v.h.Sum(nil))
 }
 
 func (v *validatingWriter) Close() error {
 	err := v.w.Close()
 	if !v.isValid() {
-		v.remove(v.id)
+		_ = v.remove(v.id)
 		return ErrInvalidID
 	}
 	return err

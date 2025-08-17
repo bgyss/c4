@@ -8,13 +8,13 @@ import (
 	// "fmt"
 	"testing"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 	"github.com/xtgo/set"
 )
 
 func i2b(i int) []byte {
 	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, int32(i))
+	_ = binary.Write(&buf, binary.LittleEndian, int32(i))
 	return buf.Bytes()
 }
 

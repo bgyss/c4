@@ -65,7 +65,7 @@ func fromSlash(path string) []byte {
 
 // Replaces all 0 with "/"
 func toSlash(path []byte) string {
-	if path == nil || len(path) == 0 {
+	if len(path) == 0 {
 		return ""
 	}
 	var strBuilder strings.Builder
@@ -160,18 +160,19 @@ func (l nilList) Children(key []byte) nilList {
 	return out
 }
 
-func trimFront(key []byte) ([]byte, []byte) {
-	i := bytes.Index(key, []byte{0})
-	for i > -1 {
-		if i == 0 {
-			key = key[1:]
-			i = bytes.Index(key, []byte{0})
-			continue
-		}
-		return key[:i], key[i:]
-	}
-	return key, nil
-}
+// trimFront is currently unused - TODO: remove if not needed
+// func trimFront(key []byte) ([]byte, []byte) {
+// 	i := bytes.Index(key, []byte{0})
+// 	for i > -1 {
+// 		if i == 0 {
+// 			key = key[1:]
+// 			i = bytes.Index(key, []byte{0})
+// 			continue
+// 		}
+// 		return key[:i], key[i:]
+// 	}
+// 	return key, nil
+// }
 
 // Sublist returns a new Pathlist containing only decedents of `path`. If
 // Pathlist does not contain an exact match of `path` nil is returned.

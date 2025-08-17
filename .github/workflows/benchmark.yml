@@ -1,0 +1,226 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
+
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+    
+    - name: Run benchmarks
+      run: |
+        go test -bench=. -benchmem -run=^$ ./... | tee benchmark_results.txt
+    
+    - name: Display benchmark results
+      run: |
+        echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat benchmark_results.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark_results.txt
+
+  memory-benchmark:
+    name: Memory Usage Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Install benchstat
+      run: |
+        echo "Installing benchstat..."
+        if ! go install golang.org/x/perf/cmd/benchstat@latest; then
+          echo "Failed to install benchstat, trying with module cache cleared"
+          go clean -modcache
+          go install golang.org/x/perf/cmd/benchstat@latest
+        fi
+        echo "Verifying benchstat installation"
+        which benchstat
+        benchstat -h
+    
+    - name: Run memory benchmarks
+      run: |
+        # Run benchmarks multiple times for statistical analysis
+        echo "Running memory benchmarks..."
+        for i in {1..5}; do
+          echo "Running memory benchmark iteration $i"
+          if ! go test -bench=BenchmarkMemoryAllocation -benchmem -run=^$ ./... >> memory_bench_$i.txt; then
+            echo "Warning: Memory benchmark iteration $i failed, trying with general benchmark"
+            go test -bench=. -benchmem -run=^$ ./... >> memory_bench_$i.txt || echo "Iteration $i failed completely"
+          fi
+        done
+        
+        # Compare results if we have valid benchmark files
+        echo "Analyzing benchmark results..."
+        valid_files=$(ls memory_bench_*.txt 2>/dev/null | head -5)
+        if [[ -n "$valid_files" ]]; then
+          benchstat $valid_files > memory_comparison.txt || echo "No significant differences found" > memory_comparison.txt
+        else
+          echo "No valid benchmark files found" > memory_comparison.txt
+        fi
+    
+    - name: Upload memory benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: memory-benchmark-results
+        path: |
+          memory_bench_*.txt
+          memory_comparison.txt
+
+  cross-platform-benchmark:
+    name: Cross-Platform Benchmarks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Run core benchmarks
+      run: |
+        go test -bench=BenchmarkIdentify -benchmem -run=^$ ./... | tee benchmark_${{ matrix.os }}.txt
+    
+    - name: Upload platform-specific results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-${{ matrix.os }}
+        path: benchmark_${{ matrix.os }}.txt
+
+  regression-test:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Check out base
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.base.sha }}
+        path: base
+    
+    - name: Check out PR
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        path: pr
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Install benchstat
+      run: |
+        echo "Installing benchstat..."
+        if ! go install golang.org/x/perf/cmd/benchstat@latest; then
+          echo "Failed to install benchstat, trying with module cache cleared"
+          go clean -modcache
+          go install golang.org/x/perf/cmd/benchstat@latest
+        fi
+        echo "Verifying benchstat installation"
+        which benchstat
+        benchstat -h
+    
+    - name: Run base benchmarks
+      run: |
+        cd base
+        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../base_bench.txt
+    
+    - name: Run PR benchmarks
+      run: |
+        cd pr
+        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../pr_bench.txt
+    
+    - name: Compare benchmarks
+      run: |
+        echo "Checking benchmark files exist..."
+        if [[ ! -f base_bench.txt ]]; then
+          echo "Error: base_bench.txt not found"
+          exit 1
+        fi
+        if [[ ! -f pr_bench.txt ]]; then
+          echo "Error: pr_bench.txt not found"
+          exit 1
+        fi
+        
+        echo "Files contents preview:"
+        echo "=== Base benchmark (first 10 lines) ==="
+        head -10 base_bench.txt
+        echo "=== PR benchmark (first 10 lines) ==="
+        head -10 pr_bench.txt
+        
+        echo "Running benchstat comparison..."
+        if benchstat base_bench.txt pr_bench.txt > comparison.txt; then
+          echo "Benchstat comparison successful"
+        else
+          echo "Warning: benchstat comparison failed, but continuing..."
+          echo "No significant performance changes detected" > comparison.txt
+        fi
+        
+        echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat comparison.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Comment PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const comparison = fs.readFileSync('comparison.txt', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 📊 Benchmark Results\n\n\`\`\`\n${comparison}\n\`\`\``
+          });

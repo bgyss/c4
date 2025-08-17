@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 
 	"bytes"
 )
@@ -72,7 +72,7 @@ func viewBytes(b []byte) string {
 		num := strconv.Itoa(int(b[j]))
 		out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 	}
-	out += fmt.Sprintf(" ... ")
+	out += " ... "
 	offset := 64 - length
 	if len(b) >= 128 {
 		for j := 64 - length; j < 64+length; j++ {
@@ -83,7 +83,7 @@ func viewBytes(b []byte) string {
 			out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 		}
 		offset = 128 - length
-		out += fmt.Sprintf(" ... ")
+		out += " ... "
 	}
 	for j := offset; j < offset+length; j++ {
 		num := strconv.Itoa(int(b[j]))
@@ -102,7 +102,7 @@ func TestDigestSum(t *testing.T) {
 	test_data := []testDataType{}
 	e := c4.NewEncoder()
 	for i, s := range test_vectors {
-		e.Write([]byte(s))
+		_, _ = e.Write([]byte(s))
 		dig := e.Digest()
 		id, err := c4.Parse(test_vector_ids[0][i])
 
@@ -156,28 +156,28 @@ func TestDigestSum(t *testing.T) {
 			t.Logf("\t   l: %s\n\t   r: %s\n", viewBytes(l), viewBytes(r))
 			t.Logf("\tdata: %s\n", viewBytes(data))
 
-			e.Write(data)
+			_, _ = e.Write(data)
 			testsum1 := e.Digest()
 			sum := l.Sum(r)
 			e.Reset()
 
 			// Check Sum produces the expected ID
 
-			if bytes.Compare(testsum1, sum) != 0 {
+			if !bytes.Equal(testsum1, sum) {
 				t.Errorf("Digests don't match, got %q expected %q", testsum1, sum)
 			}
 			// Check that Sum did not alter l, or r
-			if bytes.Compare([]byte(r), rbytes) != 0 {
+			if !bytes.Equal([]byte(r), rbytes) {
 				t.Error("Sum altered source r")
 			}
-			if bytes.Compare([]byte(l), lbytes) != 0 {
+			if !bytes.Equal([]byte(l), lbytes) {
 				t.Error("Sum altered source l")
 			}
 			t.Logf("\t   testsum1: %s\n\t   sum: %s\n", viewBytes(testsum1), viewBytes(sum))
 
 			testsum2 := c4.Digest(pair[:64]).Sum(pair[64:])
 
-			if bytes.Compare(testsum2, sum) != 0 {
+			if !bytes.Equal(testsum2, sum) {
 				t.Errorf("IDs don't match, got %q expected %q", testsum2, sum)
 			}
 
@@ -197,7 +197,7 @@ func TestDigestSlice(t *testing.T) {
 	var digests c4.DigestSlice
 	e := c4.NewEncoder()
 	for _, s := range test_vectors {
-		e.Write([]byte(s))
+		_, _ = e.Write([]byte(s))
 		digests.Insert(e.Digest())
 		e.Reset()
 	}
@@ -237,7 +237,7 @@ func TestDigestSlice(t *testing.T) {
 		if n != len(data) {
 			t.Errorf("lengths do not match got %d, expected %d", n, len(data))
 		}
-		if bytes.Compare(data, test_data) != 0 {
+		if !bytes.Equal(data, test_data) {
 			t.Errorf("data doesn't match")
 		}
 
