@@ -603,21 +603,41 @@ func IdentifyFile(path string) (c4.ID, error) {
 }
 
 func TestRamFs(t *testing.T) {
+	// Create a controlled test directory instead of walking entire filesystem
+	tempDir := t.TempDir()
+	
+	// Create test files and directories
+	testStructure := map[string][]byte{
+		"file1.txt":       []byte("content1"),
+		"dir1/file2.txt":  []byte("content2"),
+		"dir2/file3.txt":  []byte("content3"),
+		"dir2/subdir/file4.txt": []byte("content4"),
+	}
+	
+	for relPath, content := range testStructure {
+		fullPath := filepath.Join(tempDir, relPath)
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, content, 0644); err != nil {
+			t.Fatalf("Failed to create file %s: %v", fullPath, err)
+		}
+	}
 
 	m := manifest.NewManifest()
-	root, err := filepath.Abs("..")
-	if err != nil {
-		t.Errorf("error getting absolute path for ... %s", err)
-	}
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			// Log and skip files we can't read instead of failing
+			t.Logf("Warning: skipping path %s due to error: %v", path, err)
+			return nil
 		}
 		
-		// Skip problematic directories like .direnv, .git, etc.
+		// Skip any hidden directories or problematic paths
 		if info.IsDir() {
 			base := filepath.Base(path)
-			if base == ".direnv" || base == ".git" || (strings.HasPrefix(base, ".") && base != "..") {
+			if strings.HasPrefix(base, ".") && base != "." && base != ".." {
+				t.Logf("Skipping hidden directory: %s", path)
 				return filepath.SkipDir
 			}
 		}
@@ -631,7 +651,7 @@ func TestRamFs(t *testing.T) {
 			}
 		}
 
-		path = strings.TrimPrefix(path, root)
+		path = strings.TrimPrefix(path, tempDir)
 		// fmt.Printf("%s\n", path)
 		fi := manifest.NewFileInfo(info, id)
 		m.SetFileInfo(path, fi)

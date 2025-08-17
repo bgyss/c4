@@ -24,7 +24,7 @@
           
           src = builtins.path { path = ./.; name = "source"; };
           
-          vendorHash = "sha256-QxdmRdnH2u5t4fSfU1tmTmT3IE+G+wB4J7E8SoeFTmg=";
+          vendorHash = "sha256-fzJHYxRHVGHZsIJ5Xi52R7j/hRQEiF+h7Sbm6DH0M5o=";
           
           subPackages = [ "cmd/c4" ];
           
