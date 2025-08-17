@@ -228,7 +228,7 @@ All code is validated through GitHub Actions CI/CD:
 
 ### Releases
 
-Current release: [v0.8.0](https://github.com/bgyss/c4/tree/v0.8.0)
+Current release: [v0.8.1](https://github.com/bgyss/c4/tree/v0.8.1)
 
 ### Links
 
