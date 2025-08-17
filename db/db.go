@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"math/rand/v2"
+	"crypto/rand"
+	"encoding/binary"
 	"os"
 	"path/filepath"
 	"sync"
@@ -969,9 +970,19 @@ func (db *DB) Batch(fn func(*bbolt.Tx) error) error {
 func shuffle(list []string) {
 	l := len(list)
 	for j, i := 0, 0; i < l; i++ {
-		j = rand.IntN(l)
+		j = secureRandIntN(l)
 		if j != i {
 			list[i], list[j] = list[j], list[i]
 		}
 	}
+}
+
+// secureRandIntN returns a cryptographically secure random integer in [0, n)
+func secureRandIntN(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	var b [8]byte
+	_, _ = rand.Read(b[:])
+	return int(binary.BigEndian.Uint64(b[:]) % uint64(n))
 }

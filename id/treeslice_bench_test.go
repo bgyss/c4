@@ -3,7 +3,7 @@ package id
 import (
 	"bytes"
 	"container/heap"
-	"math/rand"
+	"crypto/rand"
 	"sort"
 	"testing"
 )
@@ -193,8 +193,7 @@ var data [16]byte
 // utility to create a random c4.Digest
 func randomDigest() Digest {
 	// Create some random bytes.
-	rng := rand.New(rand.NewSource(rand.Int63()))
-	_, _ = rng.Read(data[:])
+	_, _ = rand.Read(data[:])
 	e.Reset()
 	_, _ = e.Write(data[:])
 	return e.ID().Digest()

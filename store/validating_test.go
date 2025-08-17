@@ -2,7 +2,8 @@ package store
 
 import (
 	"fmt"
-	"math/rand/v2"
+	"crypto/rand"
+	"encoding/binary"
 	"strings"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestValidatingStore(t *testing.T) {
 	ramst := NewRAM()
 	st = NewValidating(ramst)
 
-	randIndx := rand.IntN(100)
+	randIndx := secureRandIntN(100)
 	t.Logf("random index: %d", randIndx)
 	testdata := make(map[string]c4.ID)
 	for i := 0; i < 100; i++ {
@@ -198,4 +199,14 @@ func TestValidatingStoreErrorCases(t *testing.T) {
 	if err == nil {
 		t.Error("Invalid file should not be stored")
 	}
+}
+
+// secureRandIntN returns a cryptographically secure random integer in [0, n)
+func secureRandIntN(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	var b [8]byte
+	_, _ = rand.Read(b[:])
+	return int(binary.BigEndian.Uint64(b[:]) % uint64(n))
 }

@@ -2,7 +2,7 @@ package db_test
 
 import (
 	"bytes"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"path"
 	"path/filepath"
@@ -88,7 +88,7 @@ func TestKeyApi(t *testing.T) {
 	var prefix string
 	var sorted_keys []string
 	t.Run("KeyGetAll", func(t *testing.T) {
-		rng := rand.New(rand.NewSource(42))
+		rng := rand.New(rand.NewPCG(42, 0))
 
 		// Create a map of random keys, and a sorted slice of those keys
 		keys := make(map[string]c4.Digest)
@@ -308,7 +308,7 @@ func TestLinkApi(t *testing.T) {
 
 	var delete_digest c4.Digest
 	t.Run("LinkGetAll", func(t *testing.T) {
-		rng := rand.New(rand.NewSource(42))
+		rng := rand.New(rand.NewPCG(42, 0))
 		// Create a slice of "source" digests
 		digests := make([]c4.Digest, 1000)
 		for i := range digests {
@@ -540,7 +540,9 @@ func TestBatching(t *testing.T) {
 func randomDigest() c4.Digest {
 	// Create some random bytes.
 	var data [8]byte
-	rng := rand.New(rand.NewSource(rand.Int63()))
-	_, _ = rng.Read(data[:])
+	rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	for i := range data {
+		data[i] = byte(rng.Uint32())
+	}
 	return c4.Identify(bytes.NewReader(data[:])).Digest()
 }
