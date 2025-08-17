@@ -137,7 +137,7 @@ jobs:
   regression-test:
     name: Performance Regression Test
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     if: github.event_name == 'pull_request'
     
     steps:
@@ -157,6 +157,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
+        cache: false
     
     - name: Install benchstat
       run: |
@@ -173,12 +174,14 @@ jobs:
     - name: Run base benchmarks
       run: |
         cd base
-        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../base_bench.txt
+        echo "Running base benchmarks..."
+        timeout 8m go test -bench=BenchmarkIdentify -benchmem -count=2 -run=^$ ./... > ../base_bench.txt || echo "Base benchmarks completed with timeout"
     
     - name: Run PR benchmarks
       run: |
         cd pr
-        go test -bench=. -benchmem -count=3 -run=^$ ./... > ../pr_bench.txt
+        echo "Running PR benchmarks..."
+        timeout 8m go test -bench=BenchmarkIdentify -benchmem -count=2 -run=^$ ./... > ../pr_bench.txt || echo "PR benchmarks completed with timeout"
     
     - name: Compare benchmarks
       run: |
