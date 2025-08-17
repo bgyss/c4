@@ -1,4 +1,4 @@
-module github.com/Avalanche-io/c4
+module github.com/bgyss/c4
 
 go 1.23.0
 
@@ -9,7 +9,7 @@ require (
 	github.com/ogier/pflag v0.0.1
 	github.com/xtgo/set v1.0.0
 	go.etcd.io/bbolt v1.4.2
-	golang.org/x/crypto v0.41.0
+	golang.org/x/term v0.34.0
 )
 
 require (
@@ -18,5 +18,4 @@ require (
 	github.com/absfs/inode v0.0.0-20190804195220-b7cd14cdd0dc // indirect
 	github.com/absfs/osfs v0.0.0-20210816191758-403afc5396f8 // indirect
 	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
 )

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 // BenchmarkIdentify benchmarks the core C4 Identify function with various data sizes
@@ -108,7 +108,7 @@ func BenchmarkIDSliceOperations(b *testing.B) {
 
 // BenchmarkParse benchmarks ID parsing from strings
 func BenchmarkParse(b *testing.B) {
-	validID := "c459DdnZNhjY9JzJbJ6mF5pJhVBXpq7m8aBTgCrq36jMKxE8hHtNJLqJn2YCTFbCUbZzchNSwqJTbm1U3ZAiuVJ2"
+	validID := "c41RbVvbPGggD8XfXN681X8S2PJ2vvdwcz3JdvyCiCoBBT8e5qeXJLHx2xxnJLfyYgwonxFNuYfGQR28mM6meF3Dj6"
 	
 	b.Run("ValidID", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -121,8 +121,8 @@ func BenchmarkParse(b *testing.B) {
 	
 	invalidIDs := []string{
 		"invalid",
-		"c459DdnZNhjY9JzJbJ6mF5pJhVBXpq7m8aBTgCrq36jMKxE8hHtNJLqJn2YCTFbCUbZzchNSwqJTbm1U3ZAiuVJ", // too short
-		"x459DdnZNhjY9JzJbJ6mF5pJhVBXpq7m8aBTgCrq36jMKxE8hHtNJLqJn2YCTFbCUbZzchNSwqJTbm1U3ZAiuVJ2", // wrong prefix
+		"c41RbVvbPGggD8XfXN681X8S2PJ2vvdwcz3JdvyCiCoBBT8e5qeXJLHx2xxnJLfyYgwonxFNuYfGQR28mM6meF3D", // too short
+		"x41RbVvbPGggD8XfXN681X8S2PJ2vvdwcz3JdvyCiCoBBT8e5qeXJLHx2xxnJLfyYgwonxFNuYfGQR28mM6meF3Dj6", // wrong prefix
 	}
 	
 	for i, invalidID := range invalidIDs {

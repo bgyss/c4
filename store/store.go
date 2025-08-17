@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 // Source - is an interface that defines a source for data identified by c4 id.

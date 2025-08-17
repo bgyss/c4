@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 	"go.etcd.io/bbolt"
 )
 

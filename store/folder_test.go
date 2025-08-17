@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 func TestFolderStore(t *testing.T) {

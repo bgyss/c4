@@ -1,9 +1,9 @@
 # C4 Store
 
-[![GoDoc](https://godoc.org/github.com/Avalanche-io/c4/store?status.svg)](https://godoc.org/github.com/avalanche-io/c4/store)
+[![GoDoc](https://godoc.org/github.com/bgyss/c4/store?status.svg)](https://godoc.org/github.com/avalanche-io/c4/store)
 
 ```go
-import "github.com/Avalanche-io/c4/store"
+import "github.com/bgyss/c4/store"
 ```
 
 C4 store is a package for representing generic c4 storage. A C4 Store abstracts

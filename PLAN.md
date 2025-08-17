@@ -31,11 +31,21 @@ This document outlines a comprehensive plan to optimize and improve the C4 ID pr
 ### Phase 1: Critical Fixes and Test Coverage (Priority: HIGH)
 
 #### 1.1 Fix Failing Tests
-**Target**: Resolve manifest package test failures
+**Target**: Resolve manifest package test failures and GitHub Actions CI issues
+
+**Local Test Failures**:
 - **Issue**: TestManifest and TestRamFs failing due to `.direnv/flake-inputs` symlink issues
 - **Root Cause**: Directory traversal encountering symbolic links it cannot read
 - **Solution**: Implement proper symlink handling or test isolation
 - **Estimated Effort**: 1-2 days
+
+**GitHub Actions CI Failures**:
+- **Benchmark / Performance Regression Test**: Fix failing benchmark comparisons and performance regression detection
+- **CI / Nix Build Test**: Resolve Nix flake build issues in GitHub Actions environment
+- **CI / Test (macos-latest, 1.24)**: Fix macOS-specific test failures with Go 1.24
+- **Root Cause**: Platform-specific issues, dependency conflicts, or test environment setup problems
+- **Solution**: Investigate CI logs, fix platform-specific code, update CI configuration
+- **Estimated Effort**: 2-3 days
 
 #### 1.2 Improve Test Coverage
 **Target**: Increase overall coverage from 71.4% to 85%+
@@ -148,6 +158,10 @@ This document outlines a comprehensive plan to optimize and improve the C4 ID pr
 ### Week 1: Foundation
 - [x] Create PLAN.md ✅
 - [ ] Fix failing manifest tests
+- [ ] Fix GitHub Actions CI failures:
+  - [ ] Benchmark / Performance Regression Test
+  - [ ] CI / Nix Build Test
+  - [ ] CI / Test (macos-latest, 1.24)
 - [ ] Improve test coverage to 80%+
 - [ ] Update dependencies
 

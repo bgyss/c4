@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 var _ Store = Folder("")

@@ -24,7 +24,7 @@
           
           src = builtins.path { path = ./.; name = "source"; };
           
-          vendorHash = "sha256-cGB7gCnY31Gz4o8+8dM6MZikpvagt6nV1fGW/DZV98c=";
+          vendorHash = "sha256-QxdmRdnH2u5t4fSfU1tmTmT3IE+G+wB4J7E8SoeFTmg=";
           
           subPackages = [ "cmd/c4" ];
           
@@ -32,7 +32,7 @@
           
           meta = with pkgs.lib; {
             description = "Go implementation of SMPTE ST 2114:2017 for universally unique and consistent identifiers";
-            homepage = "https://github.com/Avalanche-io/c4";
+            homepage = "https://github.com/bgyss/c4";
             license = licenses.asl20;
             maintainers = [ ];
             mainProgram = "c4";

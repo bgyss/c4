@@ -1,7 +1,7 @@
 package manifest_test
 
 import (
-	"github.com/Avalanche-io/c4/manifest"
+	"github.com/bgyss/c4/manifest"
 	"os"
 	"testing"
 )

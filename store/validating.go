@@ -7,7 +7,7 @@ import (
 	"hash"
 	"io"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 var _ Store = &Validating{}

@@ -13,7 +13,7 @@ updates:
       prefix: "deps"
       include: "scope"
     reviewers:
-      - "@Avalanche-io/c4-maintainers"
+      - "@bgyss"
     labels:
       - "dependencies"
       - "go"

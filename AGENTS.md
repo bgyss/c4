@@ -38,7 +38,7 @@ Primary docs worth skimming:
 Install in a module-aware project:
 
 ```bash
-go get github.com/Avalanche-io/c4@latest
+go get github.com/bgyss/c4@latest
 ```
 
 Basic single-stream identification (also in README):

@@ -21,7 +21,7 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities
 2. Instead, please report security issues via GitHub's private vulnerability reporting:
-   - Go to https://github.com/Avalanche-io/c4/security/advisories
+   - Go to https://github.com/bgyss/c4/security/advisories
    - Click "Report a vulnerability"
    - Provide a detailed description of the vulnerability
    - Include steps to reproduce if possible

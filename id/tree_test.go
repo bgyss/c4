@@ -6,7 +6,7 @@ import (
 	// "fmt"
 	"testing"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func TestTree(t *testing.T) {

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Avalanche-io/c4/db"
-	c4 "github.com/Avalanche-io/c4/id"
+	"github.com/bgyss/c4/db"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func mkdb(name string, t *testing.T) (*db.DB, func() error, error) {

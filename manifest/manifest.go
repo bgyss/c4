@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 	"github.com/xtgo/set"
 )
 

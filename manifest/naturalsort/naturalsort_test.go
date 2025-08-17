@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	natural "github.com/Avalanche-io/c4/manifest/naturalsort"
+	natural "github.com/bgyss/c4/manifest/naturalsort"
 )
 
 // updated, delete me

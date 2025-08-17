@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Avalanche-io/c4"
+	"github.com/bgyss/c4"
 )
 
 var _ Store = &Logger{}

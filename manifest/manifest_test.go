@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Avalanche-io/c4"
-	"github.com/Avalanche-io/c4/manifest"
+	"github.com/bgyss/c4"
+	"github.com/bgyss/c4/manifest"
 	"github.com/absfs/memfs"
 	bolt "go.etcd.io/bbolt"
 )

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func TestMarshalJSON(t *testing.T) {

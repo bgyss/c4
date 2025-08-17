@@ -2,15 +2,15 @@
 # C4 ID - Universally Unique and Consistent Identification
 
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/Avalanche-io/c4)](https://goreportcard.com/report/github.com/Avalanche-io/c4)
-[![CI](https://github.com/Avalanche-io/c4/workflows/CI/badge.svg)](https://github.com/Avalanche-io/c4/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/Avalanche-io/c4/branch/master/graph/badge.svg)](https://codecov.io/gh/Avalanche-io/c4)
-[![GoDoc](https://godoc.org/github.com/Avalanche-io/c4?status.svg)](https://godoc.org/github.com/avalanche-io/c4)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bgyss/c4)](https://goreportcard.com/report/github.com/bgyss/c4)
+[![CI](https://github.com/bgyss/c4/workflows/CI/badge.svg)](https://github.com/bgyss/c4/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bgyss/c4/branch/master/graph/badge.svg)](https://codecov.io/gh/bgyss/c4)
+[![GoDoc](https://godoc.org/github.com/bgyss/c4?status.svg)](https://godoc.org/github.com/avalanche-io/c4)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/github/release/Avalanche-io/c4.svg)](https://github.com/Avalanche-io/c4/releases/latest)
+[![Release](https://img.shields.io/github/release/bgyss/c4.svg)](https://github.com/bgyss/c4/releases/latest)
 
 ```go
-import "github.com/Avalanche-io/c4"
+import "github.com/bgyss/c4"
 ```
 
 This is a Go package that implements the C4 ID system **SMPTE standard ST 2114:2017**. C4 IDs are universally unique and consistent identifiers that standardize the derivation and formatting of data identification so that all users independently agree on the identification of any block or set of blocks of data.
@@ -49,7 +49,7 @@ import (
   "fmt"
   "strings"
 
-  "github.com/Avalanche-io/c4"
+  "github.com/bgyss/c4"
 )
 
 func main() {
@@ -228,7 +228,7 @@ All code is validated through GitHub Actions CI/CD:
 
 ### Releases
 
-Current release: [v0.8.0](https://github.com/Avalanche-io/c4/tree/v0.8.0)
+Current release: [v0.8.0](https://github.com/bgyss/c4/tree/v0.8.0)
 
 ### Links
 

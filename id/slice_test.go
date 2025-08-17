@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	c4 "github.com/Avalanche-io/c4/id"
+	c4 "github.com/bgyss/c4/id"
 )
 
 func TestSliceSort(t *testing.T) {
