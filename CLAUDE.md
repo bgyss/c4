@@ -27,6 +27,18 @@ go test ./manifest
 go test ./util
 ```
 
+### Security Scanning
+```bash
+# Install gosec security scanner
+go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+# Run security scan
+gosec ./...
+
+# Run with detailed output
+gosec -fmt=json ./...
+```
+
 ### Building
 ```bash
 # Build the CLI tool

@@ -60,6 +60,7 @@
             # Code formatting and linting
             golangci-lint
             gofumpt
+            gosec
             
             # Build tools
             gnumake
@@ -79,6 +80,7 @@
             echo "  go test ./...              - Run all tests"
             echo "  go test -cover ./...       - Run tests with coverage"
             echo "  golangci-lint run          - Run linter"
+            echo "  gosec ./...                - Run security scanner"
             echo ""
             echo "CLI usage after building:"
             echo "  ./c4 filename.txt          - Generate C4 ID from file"
@@ -119,6 +121,16 @@
           } ''
             cd $src
             golangci-lint run
+            touch $out
+          '';
+          
+          # Security check
+          security = pkgs.runCommand "c4-security" {
+            buildInputs = [ pkgs.go_1_24 pkgs.gosec ];
+            src = builtins.path { path = ./.; name = "source"; };
+          } ''
+            cd $src
+            gosec ./...
             touch $out
           '';
         };

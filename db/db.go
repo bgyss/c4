@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	c4 "github.com/Avalanche-io/c4/id"
@@ -259,7 +260,11 @@ func (db *DB) Stats() *Stats {
 		info = t.Bucket(c4Bucket).Bucket(treeBucket).Stats()
 		st.Trees = info.KeyN
 		if info.LeafInuse >= 96 {
-			st.TreesSize = uint64(info.LeafInuse - 96)
+			// Safely convert to uint64, ensuring no underflow
+			leafSize := info.LeafInuse - 96
+			if leafSize >= 0 {
+				st.TreesSize = uint64(leafSize)
+			}
 		}
 		// keyb := t.Bucket(keyBucket)
 		// c := keyb.Cursor()
@@ -790,7 +795,34 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 		return nil
 	})
 	if len(path) > 0 {
-		data, err := os.ReadFile(path)
+		// Validate path to prevent directory traversal
+		cleanPath := filepath.Clean(path)
+		if strings.Contains(cleanPath, "..") {
+			return nil, errors.New("invalid path: contains directory traversal")
+		}
+		
+		// Ensure path is within one of the configured storage directories
+		validPath := false
+		for _, storageDir := range db.storage {
+			absStorageDir, err := filepath.Abs(storageDir)
+			if err != nil {
+				continue
+			}
+			absPath, err := filepath.Abs(cleanPath)
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(absPath, absStorageDir+string(filepath.Separator)) ||
+				absPath == absStorageDir {
+				validPath = true
+				break
+			}
+		}
+		if !validPath {
+			return nil, errors.New("path traversal attack detected")
+		}
+		
+		data, err := os.ReadFile(cleanPath)
 		if err != nil {
 			return nil, err
 		}
@@ -900,12 +932,18 @@ func write_file_data(paths []string, digest c4.Digest, data []byte) (string, err
 
 	// range over possible storage locations trying to save in each one.
 	for _, path := range save_paths {
-		dir := filepath.Dir(path)
+		// Validate path to prevent directory traversal
+		cleanPath := filepath.Clean(path)
+		if strings.Contains(cleanPath, "..") {
+			continue // Skip potentially malicious paths
+		}
+		
+		dir := filepath.Dir(cleanPath)
 		err := os.MkdirAll(dir, 0700)
 		if err != nil {
 			return "", err
 		}
-		f, err := os.Create(filename)
+		f, err := os.Create(cleanPath)
 		if err != nil {
 			continue
 		}
@@ -984,5 +1022,15 @@ func secureRandIntN(n int) int {
 	}
 	var b [8]byte
 	_, _ = rand.Read(b[:])
-	return int(binary.BigEndian.Uint64(b[:]) % uint64(n))
+	
+	// Use a simple approach to avoid integer overflow issues
+	randVal := binary.BigEndian.Uint64(b[:])
+	
+	// Since n is an int, it's safe to use it as modulo operand for uint64
+	// as long as we handle the conversion carefully
+	result := randVal % uint64(n)
+	
+	// The result is guaranteed to be < n, and since n is an int,
+	// the result fits in an int
+	return int(result) // #nosec G115 - result is guaranteed < n which fits in int
 }

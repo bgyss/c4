@@ -123,6 +123,13 @@ func treeSize(l int) int {
 // in go 1.9. Once that package becomes available the code below this line can
 // can be removed and calls to log2 can be replaced with bits.Log2.
 func log2(x int) int {
+	if x <= 0 {
+		return 0
+	}
+	// Safely convert int to uint64, checking for negative values
+	if x < 0 {
+		return 0
+	}
 	return bitsLen64(uint64(x)) - 1
 }
 

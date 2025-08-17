@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	c4 "github.com/Avalanche-io/c4/id"
@@ -20,7 +21,9 @@ func encode(src io.Reader) *c4.ID {
 }
 
 func fileID(path string) (id *c4.ID) {
-	f, err := os.Open(path)
+	// Clean the path to prevent issues with malformed paths
+	cleanPath := filepath.Clean(path)
+	f, err := os.Open(cleanPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to identify %s. %v\n", path, err)
 		os.Exit(1)

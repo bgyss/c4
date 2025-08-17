@@ -168,7 +168,16 @@ func listSize(total int) int {
 	// The range of possible values for length are:
 	max := (total + 1) / 2
 	// min := max - log2(total)
-	min := max - bits.Len(uint(total))
+	// Safely convert total to uint, ensuring no overflow
+	var uintTotal uint
+	if total < 0 {
+		uintTotal = 0
+	} else if total > int(^uint(0)>>1) {
+		uintTotal = ^uint(0) >> 1
+	} else {
+		uintTotal = uint(total)
+	}
+	min := max - bits.Len(uintTotal)
 
 	if treeSize(min) == total {
 		return min
