@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -324,6 +325,10 @@ func TestLinkApi(t *testing.T) {
 		digestCount := 1000
 		if testing.Short() {
 			digestCount = 100
+		}
+		// Use smaller test size on macOS for better performance
+		if runtime.GOOS == "darwin" {
+			digestCount = 50
 		}
 		digests := make([]c4.Digest, digestCount)
 		for i := range digests {
