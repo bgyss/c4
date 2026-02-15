@@ -12,26 +12,37 @@ import (
 
 const version_number = "0.8.1"
 
+var (
+	parseFlags      = flag.Parse
+	flagArgs        = flag.Args
+	exitFunc        = os.Exit
+	absPath         = filepath.Abs
+	evalSymlinks    = filepath.EvalSymlinks
+	identifyPipeFn  = identify_pipe
+	identifyFileFn  = identify_file
+	identifyFilesFn = identify_files
+)
+
 func versionString() string {
 	return `c4 version ` + version_number + ` (` + runtime.GOOS + `)`
 }
 
 func main() {
-	flag.Parse()
-	file_list := flag.Args()
+	parseFlags()
+	file_list := flagArgs()
 	if version_flag {
 		fmt.Println(versionString())
-		os.Exit(0)
+		exitFunc(0)
 	}
 
 	if len(file_list) == 0 {
-		identify_pipe()
+		identifyPipeFn()
 	} else if len(file_list) == 1 && !recursive_flag && !include_meta && depth == 0 {
-		identify_file(file_list[0])
+		identifyFileFn(file_list[0])
 	} else {
-		identify_files(file_list)
+		identifyFilesFn(file_list)
 	}
-	os.Exit(0)
+	exitFunc(0)
 }
 
 func identify_pipe() {
@@ -45,10 +56,10 @@ func identify_pipe() {
 }
 
 func identify_file(filename string) {
-	path, err := filepath.Abs(filename)
+	path, err := absPath(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", filename, err)
-		os.Exit(1)
+		exitFunc(1)
 	}
 	id := walkFilesystem(-1, path, "")
 	printID(id)
@@ -56,10 +67,10 @@ func identify_file(filename string) {
 
 func identify_files(file_list []string) {
 	for _, file := range file_list {
-		path, err := filepath.Abs(file)
+		path, err := absPath(file)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", file, err)
-			os.Exit(1)
+			exitFunc(1)
 		}
 		if depth < 0 {
 			depth = 0
