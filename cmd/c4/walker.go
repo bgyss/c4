@@ -13,7 +13,7 @@ func newItem(path string) (item map[string]interface{}) {
 	f, err := os.Lstat(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get status for \"%s\": %s\n", path, err)
-		exitFunc(1)
+		hooks.exit(1)
 	}
 
 	item["folder"] = f.IsDir()
@@ -26,21 +26,21 @@ func newItem(path string) (item map[string]interface{}) {
 }
 
 func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID) {
-	path, err := absPath(filename)
+	path, err := hooks.absPath(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", filename, err)
-		exitFunc(1)
+		hooks.exit(1)
 	}
 
 	item := newItem(path)
 	if item["socket"] == true {
 		id = nullId()
 	} else if item["link"] == true && !links_flag {
-		newFilepath, _ := evalSymlinks(filename)
+		newFilepath, _ := hooks.evalSymlinks(filename)
 		item["link"] = newFilepath
 		id = nullId()
 	} else if item["link"] == true {
-		newFilepath, err := evalSymlinks(filename)
+		newFilepath, err := hooks.evalSymlinks(filename)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to follow link %s. %s\n", newFilepath, err)
 			item["link"] = newFilepath
@@ -56,7 +56,7 @@ func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID
 			files, err := os.ReadDir(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to read directory: %v\n", err)
-				exitFunc(1)
+				hooks.exit(1)
 			}
 			var childIDs c4.Slice
 			for _, file := range files {

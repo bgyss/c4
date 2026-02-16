@@ -34,27 +34,13 @@ func expectExit(t *testing.T, code int, fn func()) {
 
 func withCliStubs(t *testing.T, fn func()) {
 	t.Helper()
-	oldParse := parseFlags
-	oldArgs := flagArgs
-	oldExit := exitFunc
-	oldAbs := absPath
-	oldEval := evalSymlinks
-	oldPipe := identifyPipeFn
-	oldFile := identifyFileFn
-	oldFiles := identifyFilesFn
+	oldHooks := hooks
 	oldVersion := version_flag
 	oldRecursive := recursive_flag
 	oldIncludeMeta := include_meta
 	oldDepth := depth
 	t.Cleanup(func() {
-		parseFlags = oldParse
-		flagArgs = oldArgs
-		exitFunc = oldExit
-		absPath = oldAbs
-		evalSymlinks = oldEval
-		identifyPipeFn = oldPipe
-		identifyFileFn = oldFile
-		identifyFilesFn = oldFiles
+		hooks = oldHooks
 		version_flag = oldVersion
 		recursive_flag = oldRecursive
 		include_meta = oldIncludeMeta
@@ -65,11 +51,11 @@ func withCliStubs(t *testing.T, fn func()) {
 
 func TestMainDispatchAndExit(t *testing.T) {
 	withCliStubs(t, func() {
-		parseFlags = func() {}
-		exitFunc = panicExit
+		hooks.parseFlags = func() {}
+		hooks.exit = panicExit
 
 		version_flag = true
-		flagArgs = func() []string { return []string{"file"} }
+		hooks.flagArgs = func() []string { return []string{"file"} }
 		out := captureOutput(func() {
 			expectExit(t, 0, main)
 		})
@@ -83,16 +69,16 @@ func TestMainDispatchAndExit(t *testing.T) {
 		depth = 0
 
 		pipeCalled := false
-		identifyPipeFn = func() { pipeCalled = true }
-		flagArgs = func() []string { return nil }
+		hooks.identifyPipeFn = func() { pipeCalled = true }
+		hooks.flagArgs = func() []string { return nil }
 		expectExit(t, 0, main)
 		if !pipeCalled {
 			t.Fatalf("expected identify_pipe branch")
 		}
 
 		fileCalled := false
-		identifyFileFn = func(string) { fileCalled = true }
-		flagArgs = func() []string { return []string{"one"} }
+		hooks.identifyFileFn = func(string) { fileCalled = true }
+		hooks.flagArgs = func() []string { return []string{"one"} }
 		expectExit(t, 0, main)
 		if !fileCalled {
 			t.Fatalf("expected identify_file branch")
@@ -100,7 +86,7 @@ func TestMainDispatchAndExit(t *testing.T) {
 
 		filesCalled := false
 		recursive_flag = true
-		identifyFilesFn = func([]string) { filesCalled = true }
+		hooks.identifyFilesFn = func([]string) { filesCalled = true }
 		expectExit(t, 0, main)
 		if !filesCalled {
 			t.Fatalf("expected identify_files branch")
@@ -110,8 +96,8 @@ func TestMainDispatchAndExit(t *testing.T) {
 
 func TestIdentifyFileAndFilesErrorPaths(t *testing.T) {
 	withCliStubs(t, func() {
-		exitFunc = panicExit
-		absPath = func(string) (string, error) { return "", errors.New("abs-fail") }
+		hooks.exit = panicExit
+		hooks.absPath = func(string) (string, error) { return "", errors.New("abs-fail") }
 
 		expectExit(t, 1, func() { identify_file("bad") })
 		expectExit(t, 1, func() { identify_files([]string{"bad"}) })
@@ -125,7 +111,7 @@ func TestIdentifyFilesDepthReset(t *testing.T) {
 		if err := os.WriteFile(f, []byte("data"), 0o644); err != nil {
 			t.Fatalf("write file error: %v", err)
 		}
-		absPath = func(s string) (string, error) { return s, nil }
+		hooks.absPath = func(s string) (string, error) { return s, nil }
 		depth = -1
 		_ = captureOutput(func() { identify_files([]string{f}) })
 		if depth != 0 {
@@ -136,11 +122,11 @@ func TestIdentifyFilesDepthReset(t *testing.T) {
 
 func TestWalkFilesystemErrorAndSymlinkPaths(t *testing.T) {
 	withCliStubs(t, func() {
-		exitFunc = panicExit
-		absPath = func(string) (string, error) { return "", errors.New("abs-fail") }
+		hooks.exit = panicExit
+		hooks.absPath = func(string) (string, error) { return "", errors.New("abs-fail") }
 		expectExit(t, 1, func() { walkFilesystem(0, "x", "") })
 
-		absPath = func(s string) (string, error) { return s, nil }
+		hooks.absPath = func(s string) (string, error) { return s, nil }
 		expectExit(t, 1, func() { walkFilesystem(0, filepath.Join(t.TempDir(), "missing"), "") })
 
 		dir := t.TempDir()
@@ -149,7 +135,7 @@ func TestWalkFilesystemErrorAndSymlinkPaths(t *testing.T) {
 			t.Fatalf("symlink create error: %v", err)
 		}
 		links_flag = true
-		evalSymlinks = func(string) (string, error) { return "", errors.New("link-fail") }
+		hooks.evalSymlinks = func(string) (string, error) { return "", errors.New("link-fail") }
 		id := walkFilesystem(-1, link, "")
 		if id == nil {
 			t.Fatalf("expected null id for broken symlink path")
@@ -159,7 +145,7 @@ func TestWalkFilesystemErrorAndSymlinkPaths(t *testing.T) {
 
 func TestFileIDErrorPath(t *testing.T) {
 	withCliStubs(t, func() {
-		exitFunc = panicExit
+		hooks.exit = panicExit
 		expectExit(t, 1, func() {
 			_ = fileID(filepath.Join(t.TempDir(), "missing"))
 		})

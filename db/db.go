@@ -2,10 +2,10 @@ package db
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,9 +29,9 @@ type DB struct {
 	treeStrategy TreeStrategyType
 }
 
-// func init() {
-// 	bucketList := [][]byte{keyBucket, linkBucket}
-// }
+//	func init() {
+//		bucketList := [][]byte{keyBucket, linkBucket}
+//	}
 type TreeStrategyType int
 
 const (
@@ -154,14 +154,14 @@ func Open(path string, options *Options) (db *DB, err error) {
 
 	db_path := filepath.Join(path, "db")
 	db = new(DB)
-	
+
 	// Configure bbolt options for better performance, especially on Windows
 	opts := &bbolt.Options{
-		NoSync:    false, // Keep data safety
-		NoGrowSync: false, // Keep data safety
+		NoSync:       false,                 // Keep data safety
+		NoGrowSync:   false,                 // Keep data safety
 		FreelistType: bbolt.FreelistMapType, // Use map-based freelist for better performance
 	}
-	
+
 	// For testing on Windows, enable faster sync to improve performance
 	if runtime.GOOS == "windows" && strings.Contains(path, "c4_tests") {
 		opts.NoSync = true
@@ -413,6 +413,13 @@ type entry struct {
 	st chan struct{}
 }
 
+func closeOnce(ch chan struct{}) {
+	defer func() {
+		_ = recover() // channel may already be closed by Entry.Stop
+	}()
+	close(ch)
+}
+
 func (e *entry) Key() string {
 	// Key is called while db transaction is open.  We must copy data before
 	// handing it to a process that may use it outside of the transaction.
@@ -455,6 +462,9 @@ func (e *entry) Err() error {
 }
 
 func (e *entry) Stop() {
+	defer func() {
+		_ = recover() // stop channel can already be closed by stream teardown
+	}()
 	close(e.st)
 }
 
@@ -470,7 +480,7 @@ func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 	go func() {
 		defer func() {
 			close(out)
-			close(stop)
+			closeOnce(stop)
 		}()
 
 		_ = db.db.View(func(t *bbolt.Tx) error {
@@ -607,7 +617,7 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 	go func() {
 		defer func() {
 			close(out)
-			close(stop)
+			closeOnce(stop)
 		}()
 		_ = db.db.View(func(t *bbolt.Tx) error {
 			c := t.Bucket(c4Bucket).Bucket(linkBucket).Cursor()
@@ -620,6 +630,7 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 				ent.k = source
 				ent.v = k[64:]
 				ent.r = v // relationship
+				ent.st = stop
 
 				select {
 				case out <- ent:
@@ -674,7 +685,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 	go func() {
 		defer func() {
 			close(out)
-			close(stop)
+			closeOnce(stop)
 		}()
 		if len(sources) == 0 {
 			_ = db.db.View(func(t *bbolt.Tx) error {
@@ -694,6 +705,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 					rel := make([]byte, len(v))
 					copy(rel, v)
 					ent.r = rel
+					ent.st = stop
 
 					select {
 					case out <- ent:
@@ -723,6 +735,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 					rel := make([]byte, len(v))
 					copy(rel, v)
 					ent.r = rel
+					ent.st = stop
 
 					select {
 					case out <- ent:
@@ -838,7 +851,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 		if strings.Contains(cleanPath, "..") {
 			return nil, errors.New("invalid path: contains directory traversal")
 		}
-		
+
 		// Ensure path is within one of the configured storage directories
 		validPath := false
 		for _, storageDir := range db.storage {
@@ -859,7 +872,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 		if !validPath {
 			return nil, errors.New("path traversal attack detected")
 		}
-		
+
 		data, err := os.ReadFile(cleanPath)
 		if err != nil {
 			return nil, err
@@ -975,7 +988,7 @@ func write_file_data(paths []string, digest c4.Digest, data []byte) (string, err
 		if strings.Contains(cleanPath, "..") {
 			continue // Skip potentially malicious paths
 		}
-		
+
 		dir := filepath.Dir(cleanPath)
 		err := os.MkdirAll(dir, 0700)
 		if err != nil {
@@ -1060,14 +1073,14 @@ func secureRandIntN(n int) int {
 	}
 	var b [8]byte
 	_, _ = rand.Read(b[:])
-	
+
 	// Use a simple approach to avoid integer overflow issues
 	randVal := binary.BigEndian.Uint64(b[:])
-	
+
 	// Since n is an int, it's safe to use it as modulo operand for uint64
 	// as long as we handle the conversion carefully
 	result := randVal % uint64(n)
-	
+
 	// The result is guaranteed to be < n, and since n is an int,
 	// the result fits in an int
 	return int(result) // #nosec G115 - result is guaranteed < n which fits in int

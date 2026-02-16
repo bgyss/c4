@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -520,5 +521,196 @@ func TestWriteFileDataTraversalSkip(t *testing.T) {
 	}
 	if path != "" {
 		t.Fatalf("expected empty path when all candidates are skipped, got %q", path)
+	}
+}
+
+func TestOpenErrorBranches(t *testing.T) {
+	// Mkdir failure branch: db root already exists as a file.
+	base := t.TempDir()
+	filePath := filepath.Join(base, "as-file")
+	if err := os.WriteFile(filePath, []byte("x"), 0o600); err != nil {
+		t.Fatalf("write file error: %v", err)
+	}
+	if _, err := Open(filePath, nil); err == nil {
+		t.Fatalf("expected Open error when root path is a file")
+	}
+
+	// bbolt open failure branch: db path already exists as a directory.
+	dirRoot := filepath.Join(base, "as-dir")
+	if err := os.MkdirAll(filepath.Join(dirRoot, "db"), 0o700); err != nil {
+		t.Fatalf("mkdir db dir error: %v", err)
+	}
+	if _, err := Open(dirRoot, nil); err == nil {
+		t.Fatalf("expected Open error when db file path is a directory")
+	}
+}
+
+func TestClosedDBErrorPaths(t *testing.T) {
+	c4db, _ := openTestDB(t, nil)
+	if err := c4db.Close(); err != nil {
+		t.Fatalf("close error: %v", err)
+	}
+
+	if st := c4db.Stats(); st != nil {
+		t.Fatalf("expected nil stats on closed DB")
+	}
+	if _, err := c4db.KeyGet("k"); err == nil {
+		t.Fatalf("expected KeyGet error on closed DB")
+	}
+	if _, err := c4db.KeyDelete("k"); err == nil {
+		t.Fatalf("expected KeyDelete error on closed DB")
+	}
+	if _, err := c4db.KeyDeleteAll("k"); err == nil {
+		t.Fatalf("expected KeyDeleteAll error on closed DB")
+	}
+}
+
+func TestLargeKeyErrorBranches(t *testing.T) {
+	c4db, _ := openTestDB(t, nil)
+	d := c4.Identify(strings.NewReader("large-key")).Digest()
+
+	tooLargeKey := strings.Repeat("k", 40000)
+	if _, err := c4db.KeySet(tooLargeKey, d); err == nil {
+		t.Fatalf("expected KeySet error for oversized key")
+	}
+
+	// Key size fits key bucket limit but exceeds index key limit once digest is prefixed.
+	indexTooLargeKey := strings.Repeat("i", 32760)
+	if _, err := c4db.KeySet(indexTooLargeKey, d); err == nil {
+		t.Fatalf("expected KeySet index-key error")
+	}
+
+	if c4db.KeyCAS(tooLargeKey, nil, d) {
+		t.Fatalf("expected KeyCAS false on oversized key")
+	}
+}
+
+func TestStopBranchesForStreams(t *testing.T) {
+	c4db, _ := openTestDB(t, nil)
+
+	for i := 0; i < 10; i++ {
+		k := fmt.Sprintf("stop/%d", i)
+		if _, err := c4db.KeySet(k, c4.Identify(strings.NewReader(k)).Digest()); err != nil {
+			t.Fatalf("KeySet %q error: %v", k, err)
+		}
+	}
+
+	stopped := false
+	for e := range c4db.KeyGetAll("stop/") {
+		e.Stop()
+		e.Close()
+		stopped = true
+		break
+	}
+	if !stopped {
+		t.Fatalf("expected at least one key entry")
+	}
+
+	src := c4.Identify(strings.NewReader("stop-src")).Digest()
+	for i := 0; i < 5; i++ {
+		target := c4.Identify(strings.NewReader(fmt.Sprintf("stop-target-%d", i))).Digest()
+		if err := c4db.LinkSet("stop-rel", src, target); err != nil {
+			t.Fatalf("LinkSet error: %v", err)
+		}
+	}
+
+	stopped = false
+	for e := range c4db.LinkGet("stop-rel", src) {
+		e.Stop()
+		e.Close()
+		stopped = true
+		break
+	}
+	if !stopped {
+		t.Fatalf("expected at least one link entry from LinkGet")
+	}
+
+	stopped = false
+	for e := range c4db.LinkGetAll() {
+		e.Stop()
+		e.Close()
+		stopped = true
+		break
+	}
+	if !stopped {
+		t.Fatalf("expected at least one link entry from LinkGetAll()")
+	}
+
+	stopped = false
+	for e := range c4db.LinkGetAll(src) {
+		e.Stop()
+		e.Close()
+		stopped = true
+		break
+	}
+	if !stopped {
+		t.Fatalf("expected at least one link entry from LinkGetAll(src)")
+	}
+}
+
+func TestTreeAndWriteFileErrorBranches(t *testing.T) {
+	c4db, _ := openTestDB(t, nil)
+	tree, digest, _ := testTree(t)
+
+	c4db.treeMaxSize = 1
+	c4db.storage = []string{filepath.Join(t.TempDir(), "missing")}
+	if err := c4db.TreeSet(tree); err == nil {
+		t.Fatalf("expected TreeSet error when storage path is missing")
+	}
+
+	storage := t.TempDir()
+	missingPath := filepath.Join(storage, "missing-tree.bin")
+	pointer := c4.Identify(strings.NewReader("tree-pointer")).Digest()
+	if err := c4db.Update(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		if err := b.Put(digest, pointer); err != nil {
+			return err
+		}
+		return b.Put(pointer, []byte(missingPath))
+	}); err != nil {
+		t.Fatalf("seed tree path error: %v", err)
+	}
+	c4db.storage = []string{storage}
+	if _, err := c4db.TreeGet(digest); err == nil {
+		t.Fatalf("expected TreeGet read-file error for missing external tree")
+	}
+
+	// Path normalization branch where filepath.Abs(cleanPath) fails.
+	if err := c4db.Update(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		if err := b.Put(digest, pointer); err != nil {
+			return err
+		}
+		return b.Put(pointer, []byte("\x00"))
+	}); err != nil {
+		t.Fatalf("seed invalid path error: %v", err)
+	}
+	c4db.storage = []string{"\x00"}
+	if _, err := c4db.TreeGet(digest); err == nil {
+		t.Fatalf("expected TreeGet traversal error for invalid absolute paths")
+	}
+
+	// write_file_data MkdirAll and Create error branches.
+	dig := c4.Identify(strings.NewReader("write-err")).Digest()
+	if _, err := write_file_data([]string{"/dev/null"}, dig, []byte("x")); err == nil {
+		t.Fatalf("expected write_file_data mkdir error on /dev/null")
+	}
+
+	unwritable := t.TempDir()
+	name := dig.ID().String()
+	dir := filepath.Join(unwritable, name[:2], name[2:4])
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatalf("mkdir unwritable dir error: %v", err)
+	}
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatalf("chmod unwritable dir error: %v", err)
+	}
+	writable := t.TempDir()
+	out, err := write_file_data([]string{unwritable, writable}, dig, []byte("payload"))
+	if err != nil {
+		t.Fatalf("write_file_data fallback error: %v", err)
+	}
+	if out == "" {
+		t.Fatalf("expected write_file_data to fallback to writable path")
 	}
 }

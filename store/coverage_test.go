@@ -335,6 +335,33 @@ func TestValidatingCreateAndErrorForwarding(t *testing.T) {
 	}
 }
 
+func TestFolderValidatePathCwdError(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd error: %v", err)
+	}
+	base := t.TempDir()
+	if err := os.Chdir(base); err != nil {
+		t.Fatalf("Chdir error: %v", err)
+	}
+	if err := os.RemoveAll(base); err != nil {
+		t.Fatalf("RemoveAll error: %v", err)
+	}
+	defer func() { _ = os.Chdir(wd) }()
+
+	id := c4.Identify(strings.NewReader("cwd-err-id"))
+	f := Folder("relative-folder")
+	if _, err := f.Open(id); err == nil {
+		t.Fatalf("expected Open validation error when cwd is gone")
+	}
+	if _, err := f.Create(id); err == nil {
+		t.Fatalf("expected Create validation error when cwd is gone")
+	}
+	if err := f.Remove(id); err == nil {
+		t.Fatalf("expected Remove validation error when cwd is gone")
+	}
+}
+
 type failingStore struct{}
 
 func (f *failingStore) Open(c4.ID) (io.ReadCloser, error)    { return nil, errors.New("open-fail") }
