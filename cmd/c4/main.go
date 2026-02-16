@@ -12,26 +12,50 @@ import (
 
 const version_number = "0.8.1"
 
+type cliHooks struct {
+	parseFlags      func()
+	flagArgs        func() []string
+	exit            func(int)
+	absPath         func(string) (string, error)
+	evalSymlinks    func(string) (string, error)
+	identifyPipeFn  func()
+	identifyFileFn  func(string)
+	identifyFilesFn func([]string)
+}
+
+var hooks cliHooks
+
+func init() {
+	hooks.parseFlags = flag.Parse
+	hooks.flagArgs = flag.Args
+	hooks.exit = os.Exit
+	hooks.absPath = filepath.Abs
+	hooks.evalSymlinks = filepath.EvalSymlinks
+	hooks.identifyPipeFn = identify_pipe
+	hooks.identifyFileFn = identify_file
+	hooks.identifyFilesFn = identify_files
+}
+
 func versionString() string {
 	return `c4 version ` + version_number + ` (` + runtime.GOOS + `)`
 }
 
 func main() {
-	flag.Parse()
-	file_list := flag.Args()
+	hooks.parseFlags()
+	file_list := hooks.flagArgs()
 	if version_flag {
 		fmt.Println(versionString())
-		os.Exit(0)
+		hooks.exit(0)
 	}
 
 	if len(file_list) == 0 {
-		identify_pipe()
+		hooks.identifyPipeFn()
 	} else if len(file_list) == 1 && !recursive_flag && !include_meta && depth == 0 {
-		identify_file(file_list[0])
+		hooks.identifyFileFn(file_list[0])
 	} else {
-		identify_files(file_list)
+		hooks.identifyFilesFn(file_list)
 	}
-	os.Exit(0)
+	hooks.exit(0)
 }
 
 func identify_pipe() {
@@ -45,10 +69,10 @@ func identify_pipe() {
 }
 
 func identify_file(filename string) {
-	path, err := filepath.Abs(filename)
+	path, err := hooks.absPath(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", filename, err)
-		os.Exit(1)
+		hooks.exit(1)
 	}
 	id := walkFilesystem(-1, path, "")
 	printID(id)
@@ -56,10 +80,10 @@ func identify_file(filename string) {
 
 func identify_files(file_list []string) {
 	for _, file := range file_list {
-		path, err := filepath.Abs(file)
+		path, err := hooks.absPath(file)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", file, err)
-			os.Exit(1)
+			hooks.exit(1)
 		}
 		if depth < 0 {
 			depth = 0

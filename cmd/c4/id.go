@@ -26,7 +26,7 @@ func fileID(path string) (id *c4.ID) {
 	f, err := os.Open(cleanPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to identify %s. %v\n", path, err)
-		os.Exit(1)
+		hooks.exit(1)
 	}
 	id = encode(f)
 	_ = f.Close()
