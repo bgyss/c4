@@ -1,6 +1,6 @@
 services:
   c4:
-    image: avalancheio/c4:latest
+    image: ghcr.io/bgyss/c4:latest
     container_name: c4
     working_dir: /data
     volumes:
