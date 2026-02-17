@@ -83,7 +83,7 @@ Tip: Run package-scoped tests first when iterating, e.g. `go test ./id -run Test
 
 ## Releasing
 
-- Current release is listed in `README.md` (e.g., `v0.8.1`).
+- Current release is listed in `README.md` (e.g., `v0.8.2`).
 - Keep changes backward compatible where possible; avoid breaking exported types without discussion.
 
 ## Security & License

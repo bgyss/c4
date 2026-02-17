@@ -160,6 +160,9 @@ go test ./...
 ### Docker (Including Synology Container Manager)
 
 ```bash
+# Pull a prebuilt image from GitHub Container Registry
+docker pull ghcr.io/bgyss/c4:latest
+
 # Build from source
 docker build -t c4:local .
 
@@ -172,7 +175,7 @@ docker run --rm -v "$PWD:/data:ro" c4:local -R /data
 
 For Synology DSM 7+ Container Manager:
 
-1. Pull `avalancheio/c4:latest` in the Registry tab.
+1. Pull `ghcr.io/bgyss/c4:latest` in the Registry tab.
 2. Create a project using `docker-compose.synology.yml` from this repository.
 3. Update `/volume1/data` in that file to the NAS folder you want to scan.
 4. Keep restart policy set to `no` because this is a command-style container (it exits after work is done).
@@ -238,7 +241,7 @@ The project uses several tools to maintain code quality:
 All code is validated through GitHub Actions CI/CD:
 
 - ✅ Multi-platform testing (Linux, macOS, Windows)
-- ✅ Multi-version Go support (1.20, 1.21)
+- ✅ Go toolchain validation (1.24.x)
 - ✅ Automated security scanning
 - ✅ Performance regression testing
 - ✅ Coverage reporting
@@ -249,7 +252,7 @@ All code is validated through GitHub Actions CI/CD:
 
 ### Releases
 
-Current release: [v0.8.1](https://github.com/bgyss/c4/tree/v0.8.1)
+Current release: [v0.8.2](https://github.com/bgyss/c4/tree/v0.8.2)
 
 ### Links
 

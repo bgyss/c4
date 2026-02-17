@@ -74,34 +74,50 @@ jobs:
         slug: bgyss/c4
         
   build:
-    name: Build
-    runs-on: ${{ matrix.os }}
+    name: Build Linux and macOS Binaries
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+
     steps:
     - name: Check out code
       uses: actions/checkout@v4
-    
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
-    
-    - name: Build CLI
-      run: go build -v -o c4${{ matrix.os == 'windows-latest' && '.exe' || '' }} ./cmd/c4
-    
-    - name: Test CLI basic functionality
+
+    - name: Build CLI binary
       shell: bash
       run: |
-        echo "test content" | ./c4${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-    
+        mkdir -p dist
+        BIN="c4-${{ matrix.goos }}-${{ matrix.goarch }}"
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 \
+          go build -trimpath -ldflags="-s -w" -o "dist/${BIN}" ./cmd/c4
+        tar -C dist -czf "dist/${BIN}.tar.gz" "${BIN}"
+
+    - name: Test CLI basic functionality
+      if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+      shell: bash
+      run: |
+        echo "test content" | ./dist/c4-linux-amd64
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: c4-${{ matrix.os }}
-        path: c4${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+        name: c4-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/c4-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
 
   lint:
     name: Lint

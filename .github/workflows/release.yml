@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.24'
 
 jobs:
   build-and-release:
@@ -14,80 +14,94 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - name: Check out code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
-    
+
     - name: Run tests
       run: go test -v ./...
-    
-    - name: Build binaries
+
+    - name: Build and package binaries
+      shell: bash
       run: |
-        # Build for multiple platforms
-        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o c4-linux-amd64 ./cmd/c4
-        GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o c4-linux-arm64 ./cmd/c4
-        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o c4-darwin-amd64 ./cmd/c4
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o c4-darwin-arm64 ./cmd/c4
-        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o c4-windows-amd64.exe ./cmd/c4
-        GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o c4-windows-arm64.exe ./cmd/c4
-        
-        # Create checksums
-        sha256sum c4-* > checksums.txt
-    
+        mkdir -p dist
+
+        targets=(
+          "linux amd64"
+          "linux arm64"
+          "darwin amd64"
+          "darwin arm64"
+        )
+
+        for target in "${targets[@]}"; do
+          set -- ${target}
+          goos="$1"
+          goarch="$2"
+          bin="c4-${goos}-${goarch}"
+
+          GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
+            go build -trimpath -ldflags='-s -w' -o "dist/${bin}" ./cmd/c4
+
+          tar -C dist -czf "dist/${bin}.tar.gz" "${bin}"
+        done
+
+    - name: Create checksums
+      run: sha256sum dist/*.tar.gz > dist/checksums.txt
+
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
-          c4-linux-amd64
-          c4-linux-arm64
-          c4-darwin-amd64
-          c4-darwin-arm64
-          c4-windows-amd64.exe
-          c4-windows-arm64.exe
-          checksums.txt
+          dist/*.tar.gz
+          dist/checksums.txt
         generate_release_notes: true
         draft: false
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  docker-build:
-    name: Build and Push Docker Image
+  container-release:
+    name: Build and Push GHCR Image
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
+    permissions:
+      contents: read
+      packages: write
+
     steps:
     - name: Check out code
       uses: actions/checkout@v4
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
-    - name: Log in to Docker Hub
+
+    - name: Log in to GHCR
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: avalancheio/c4
+        images: ghcr.io/${{ github.repository }}
         tags: |
           type=ref,event=tag
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
-    
+          type=raw,value=latest
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
       with:

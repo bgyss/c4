@@ -7,6 +7,7 @@ The C4 project is currently maintained on the master branch. We provide security
 | Version | Supported          |
 | ------- | ------------------ |
 | master branch | :white_check_mark: |
+| v0.8.2  | :white_check_mark: |
 | v0.8.1  | :white_check_mark: |
 | v0.8.0  | :x:                |
 | < v0.8  | :x:                |
