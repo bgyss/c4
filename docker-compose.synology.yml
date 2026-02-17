@@ -1,0 +1,10 @@
+services:
+  c4:
+    image: avalancheio/c4:latest
+    container_name: c4
+    working_dir: /data
+    volumes:
+      - /volume1/data:/data:ro
+    # Example: recursively identify files in the mounted share.
+    command: ["-R", "/data"]
+    restart: "no"
