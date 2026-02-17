@@ -10,7 +10,7 @@ import (
 	flag "github.com/ogier/pflag"
 )
 
-const version_number = "0.8.1"
+const version_number = "0.8.2"
 
 type cliHooks struct {
 	parseFlags      func()
