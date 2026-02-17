@@ -25,6 +25,14 @@ type cliHooks struct {
 
 var hooks cliHooks
 
+func identifyFileMain(filename string) {
+	_ = identify_file(filename)
+}
+
+func identifyFilesMain(fileList []string) {
+	_ = identify_files(fileList)
+}
+
 var (
 	// Compatibility test seams. By default they delegate through hooks.
 	exitFn = func(code int) {
@@ -48,12 +56,8 @@ func init() {
 	hooks.absPath = filepath.Abs
 	hooks.evalSymlinks = filepath.EvalSymlinks
 	hooks.identifyPipeFn = identify_pipe
-	hooks.identifyFileFn = func(filename string) {
-		_ = identify_file(filename)
-	}
-	hooks.identifyFilesFn = func(fileList []string) {
-		_ = identify_files(fileList)
-	}
+	hooks.identifyFileFn = identifyFileMain
+	hooks.identifyFilesFn = identifyFilesMain
 }
 
 func versionString() string {

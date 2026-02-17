@@ -8,11 +8,12 @@ import (
 	"strings"
 
 	c4 "github.com/bgyss/c4/id"
-	"golang.org/x/term"
 )
 
 var openFile = os.Open
-var isTerminal = term.IsTerminal
+var stdoutStat = func() (os.FileInfo, error) {
+	return os.Stdout.Stat()
+}
 
 func encode(src io.Reader) *c4.ID {
 	e := c4.NewEncoder()
@@ -44,7 +45,8 @@ func nullId() *c4.ID {
 }
 
 func printID(id *c4.ID) {
-	if isTerminal(int(os.Stdout.Fd())) {
+	stat, err := stdoutStat()
+	if err == nil && (stat.Mode()&os.ModeCharDevice) != 0 {
 		fmt.Printf("%s\n", id.String())
 	} else {
 		fmt.Printf("%s", id.String())

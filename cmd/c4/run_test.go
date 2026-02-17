@@ -37,7 +37,7 @@ func resetCmdState(t *testing.T) {
 	origReadDir := readDir
 	origEvalSymlinks := evalSymlinks
 	origOpen := openFile
-	origIsTerminal := isTerminal
+	origStdoutStat := stdoutStat
 	origArgs := os.Args
 	origCmd := flag.CommandLine
 	origUsage := flag.Usage
@@ -56,12 +56,8 @@ func resetCmdState(t *testing.T) {
 	hooks.absPath = filepath.Abs
 	hooks.evalSymlinks = filepath.EvalSymlinks
 	hooks.identifyPipeFn = identify_pipe
-	hooks.identifyFileFn = func(filename string) {
-		_ = identify_file(filename)
-	}
-	hooks.identifyFilesFn = func(fileList []string) {
-		_ = identify_files(fileList)
-	}
+	hooks.identifyFileFn = identifyFileMain
+	hooks.identifyFilesFn = identifyFilesMain
 
 	exitFn = func(code int) { hooks.exit(code) }
 	absPath = func(path string) (string, error) { return hooks.absPath(path) }
@@ -69,6 +65,9 @@ func resetCmdState(t *testing.T) {
 	identifyPipeFn = identify_pipe
 	identifyFileFn = identify_file
 	identifyFilesFn = identify_files
+	stdoutStat = func() (os.FileInfo, error) {
+		return os.Stdout.Stat()
+	}
 
 	fs := flag.NewFlagSet("c4-test", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -88,7 +87,7 @@ func resetCmdState(t *testing.T) {
 		readDir = origReadDir
 		evalSymlinks = origEvalSymlinks
 		openFile = origOpen
-		isTerminal = origIsTerminal
+		stdoutStat = origStdoutStat
 		os.Args = origArgs
 		flag.CommandLine = origCmd
 		flag.Usage = origUsage
@@ -243,6 +242,30 @@ func TestIdentifyFilesClampsNegativeDepth(t *testing.T) {
 	}
 }
 
+func TestMainHookWrappers(t *testing.T) {
+	resetCmdState(t)
+	dir := t.TempDir()
+	file := filepath.Join(dir, "file.txt")
+	if err := os.WriteFile(file, []byte("file"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	expectedID := encode(strings.NewReader("file")).String()
+	out := captureOutput(func() {
+		identifyFileMain(file)
+	})
+	if strings.TrimSpace(out) != expectedID {
+		t.Fatalf("identifyFileMain output mismatch: %q", out)
+	}
+
+	out = captureOutput(func() {
+		identifyFilesMain([]string{file})
+	})
+	if !strings.Contains(out, expectedID+":") || !strings.Contains(out, filepath.Base(file)) {
+		t.Fatalf("identifyFilesMain output mismatch: %q", out)
+	}
+}
+
 func TestIdentifyPipeUsageOnStatError(t *testing.T) {
 	resetCmdState(t)
 	stdinStat = func() (os.FileInfo, error) {
@@ -388,7 +411,9 @@ func TestOutputPathWithoutMetadata(t *testing.T) {
 func TestPrintIDTerminalBranch(t *testing.T) {
 	resetCmdState(t)
 	id := encode(strings.NewReader("terminal-branch"))
-	isTerminal = func(int) bool { return true }
+	stdoutStat = func() (os.FileInfo, error) {
+		return fakeFileInfo{mode: os.ModeCharDevice}, nil
+	}
 	out := captureOutput(func() {
 		printID(id)
 	})
