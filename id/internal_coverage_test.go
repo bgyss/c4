@@ -86,7 +86,7 @@ func TestIDEncodingBranches(t *testing.T) {
 	}
 }
 
-func TestIDGobEncodeDecode(t *testing.T) {
+func TestIDGobEncodeDecodeInternal(t *testing.T) {
 	id := Identify(strings.NewReader("gob-branches"))
 	data, err := id.GobEncode()
 	if err != nil {

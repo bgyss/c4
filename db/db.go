@@ -421,6 +421,13 @@ type entry struct {
 	so *sync.Once
 }
 
+func closeOnce(ch chan struct{}) {
+	defer func() {
+		_ = recover() // channel may already be closed by Entry.Stop
+	}()
+	close(ch)
+}
+
 func (e *entry) Key() string {
 	// Key is called while db transaction is open.  We must copy data before
 	// handing it to a process that may use it outside of the transaction.
@@ -474,11 +481,11 @@ func (e *entry) Stop() {
 	}
 	if e.so != nil {
 		e.so.Do(func() {
-			close(e.st)
+			closeOnce(e.st)
 		})
 		return
 	}
-	close(e.st)
+	closeOnce(e.st)
 }
 
 var entry_pool = sync.Pool{
@@ -495,7 +502,7 @@ func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 		defer func() {
 			close(out)
 			stopOnce.Do(func() {
-				close(stop)
+				closeOnce(stop)
 			})
 		}()
 
@@ -637,7 +644,7 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 		defer func() {
 			close(out)
 			stopOnce.Do(func() {
-				close(stop)
+				closeOnce(stop)
 			})
 		}()
 		_ = db.db.View(func(t *bbolt.Tx) error {
@@ -710,7 +717,7 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 		defer func() {
 			close(out)
 			stopOnce.Do(func() {
-				close(stop)
+				closeOnce(stop)
 			})
 		}()
 		if len(sources) == 0 {

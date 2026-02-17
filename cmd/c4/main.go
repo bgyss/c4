@@ -12,13 +12,27 @@ import (
 
 const version_number = "0.8.1"
 
-func versionString() string {
-	return `c4 version ` + version_number + ` (` + runtime.GOOS + `)`
+type cliHooks struct {
+	parseFlags      func()
+	flagArgs        func() []string
+	exit            func(int)
+	absPath         func(string) (string, error)
+	evalSymlinks    func(string) (string, error)
+	identifyPipeFn  func()
+	identifyFileFn  func(string)
+	identifyFilesFn func([]string)
 }
 
+var hooks cliHooks
+
 var (
-	exitFn          = os.Exit
-	absPath         = filepath.Abs
+	// Compatibility test seams. By default they delegate through hooks.
+	exitFn = func(code int) {
+		hooks.exit(code)
+	}
+	absPath = func(path string) (string, error) {
+		return hooks.absPath(path)
+	}
 	identifyPipeFn  = identify_pipe
 	identifyFileFn  = identify_file
 	identifyFilesFn = identify_files
@@ -27,26 +41,59 @@ var (
 	}
 )
 
+func init() {
+	hooks.parseFlags = flag.Parse
+	hooks.flagArgs = flag.Args
+	hooks.exit = os.Exit
+	hooks.absPath = filepath.Abs
+	hooks.evalSymlinks = filepath.EvalSymlinks
+	hooks.identifyPipeFn = identify_pipe
+	hooks.identifyFileFn = func(filename string) {
+		_ = identify_file(filename)
+	}
+	hooks.identifyFilesFn = func(fileList []string) {
+		_ = identify_files(fileList)
+	}
+}
+
+func versionString() string {
+	return `c4 version ` + version_number + ` (` + runtime.GOOS + `)`
+}
+
 func main() {
-	exitFn(run())
+	hooks.parseFlags()
+	fileList := hooks.flagArgs()
+	if version_flag {
+		fmt.Println(versionString())
+		hooks.exit(0)
+	}
+
+	if len(fileList) == 0 {
+		hooks.identifyPipeFn()
+	} else if len(fileList) == 1 && !recursive_flag && !include_meta && depth == 0 {
+		hooks.identifyFileFn(fileList[0])
+	} else {
+		hooks.identifyFilesFn(fileList)
+	}
+	hooks.exit(0)
 }
 
 func run() int {
 	flag.Parse()
-	file_list := flag.Args()
+	fileList := flag.Args()
 	if version_flag {
 		fmt.Println(versionString())
 		return 0
 	}
 
-	if len(file_list) == 0 {
+	if len(fileList) == 0 {
 		identifyPipeFn()
-	} else if len(file_list) == 1 && !recursive_flag && !include_meta && depth == 0 {
-		return identifyFileFn(file_list[0])
-	} else {
-		return identifyFilesFn(file_list)
+		return 0
 	}
-	return 0
+	if len(fileList) == 1 && !recursive_flag && !include_meta && depth == 0 {
+		return identifyFileFn(fileList[0])
+	}
+	return identifyFilesFn(fileList)
 }
 
 func identify_pipe() {
@@ -63,6 +110,7 @@ func identify_file(filename string) int {
 	path, err := absPath(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", filename, err)
+		exitFn(1)
 		return 1
 	}
 	id := walkFilesystem(-1, path, "")
@@ -70,11 +118,12 @@ func identify_file(filename string) int {
 	return 0
 }
 
-func identify_files(file_list []string) int {
-	for _, file := range file_list {
+func identify_files(fileList []string) int {
+	for _, file := range fileList {
 		path, err := absPath(file)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", file, err)
+			exitFn(1)
 			return 1
 		}
 		if depth < 0 {

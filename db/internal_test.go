@@ -96,7 +96,7 @@ func TestEntryMethods(t *testing.T) {
 	enOnce.Stop() // second call should be a no-op and must not panic
 }
 
-func TestWriteFileData(t *testing.T) {
+func TestWriteFileDataInternal(t *testing.T) {
 	tmp := t.TempDir()
 	pathA := filepath.Join(tmp, "a")
 	pathB := filepath.Join(tmp, "b")

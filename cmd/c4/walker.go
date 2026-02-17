@@ -11,7 +11,9 @@ import (
 var (
 	lstatFile    = os.Lstat
 	readDir      = os.ReadDir
-	evalSymlinks = filepath.EvalSymlinks
+	evalSymlinks = func(path string) (string, error) {
+		return hooks.evalSymlinks(path)
+	}
 )
 
 func newItem(path string) (item map[string]interface{}) {

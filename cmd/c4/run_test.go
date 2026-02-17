@@ -26,6 +26,7 @@ func (f fakeFileInfo) Sys() interface{}   { return nil }
 func resetCmdState(t *testing.T) {
 	t.Helper()
 
+	origHooks := hooks
 	origExit := exitFn
 	origAbs := absPath
 	origPipe := identifyPipeFn
@@ -49,6 +50,26 @@ func resetCmdState(t *testing.T) {
 	absolute_flag = false
 	formatting_string = "id"
 
+	hooks.parseFlags = flag.Parse
+	hooks.flagArgs = flag.Args
+	hooks.exit = func(int) {}
+	hooks.absPath = filepath.Abs
+	hooks.evalSymlinks = filepath.EvalSymlinks
+	hooks.identifyPipeFn = identify_pipe
+	hooks.identifyFileFn = func(filename string) {
+		_ = identify_file(filename)
+	}
+	hooks.identifyFilesFn = func(fileList []string) {
+		_ = identify_files(fileList)
+	}
+
+	exitFn = func(code int) { hooks.exit(code) }
+	absPath = func(path string) (string, error) { return hooks.absPath(path) }
+	evalSymlinks = func(path string) (string, error) { return hooks.evalSymlinks(path) }
+	identifyPipeFn = identify_pipe
+	identifyFileFn = identify_file
+	identifyFilesFn = identify_files
+
 	fs := flag.NewFlagSet("c4-test", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	flag.CommandLine = fs
@@ -56,6 +77,7 @@ func resetCmdState(t *testing.T) {
 	flag.Usage = fs.Usage
 
 	t.Cleanup(func() {
+		hooks = origHooks
 		exitFn = origExit
 		absPath = origAbs
 		identifyPipeFn = origPipe
@@ -176,7 +198,7 @@ func TestMainCallsExitWithRunCode(t *testing.T) {
 	resetCmdState(t)
 	os.Args = []string{"c4", "--version"}
 	var got int
-	exitFn = func(code int) {
+	hooks.exit = func(code int) {
 		got = code
 		panic("exit-called")
 	}
@@ -196,6 +218,7 @@ func TestIdentifyFileAndFilesAbsFailure(t *testing.T) {
 	absPath = func(string) (string, error) {
 		return "", errors.New("abs failed")
 	}
+	exitFn = func(int) {}
 	if code := identify_file("x"); code != 1 {
 		t.Fatalf("expected identify_file to return 1, got %d", code)
 	}
