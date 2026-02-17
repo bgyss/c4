@@ -11,6 +11,9 @@ import (
 	"golang.org/x/term"
 )
 
+var openFile = os.Open
+var isTerminal = term.IsTerminal
+
 func encode(src io.Reader) *c4.ID {
 	e := c4.NewEncoder()
 	_, err := io.Copy(e, src)
@@ -23,10 +26,11 @@ func encode(src io.Reader) *c4.ID {
 func fileID(path string) (id *c4.ID) {
 	// Clean the path to prevent issues with malformed paths
 	cleanPath := filepath.Clean(path)
-	f, err := os.Open(cleanPath)
+	f, err := openFile(cleanPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to identify %s. %v\n", path, err)
-		os.Exit(1)
+		exitFn(1)
+		return nullId()
 	}
 	id = encode(f)
 	_ = f.Close()
@@ -40,7 +44,7 @@ func nullId() *c4.ID {
 }
 
 func printID(id *c4.ID) {
-	if term.IsTerminal(int(os.Stdout.Fd())) {
+	if isTerminal(int(os.Stdout.Fd())) {
 		fmt.Printf("%s\n", id.String())
 	} else {
 		fmt.Printf("%s", id.String())

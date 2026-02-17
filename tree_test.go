@@ -86,3 +86,42 @@ func TestTreeEncoding(t *testing.T) {
 		}
 	}
 }
+
+func TestReadTreeInvalidHeader(t *testing.T) {
+	if _, err := c4.ReadTree(bytes.NewReader([]byte("short"))); err == nil {
+		t.Fatalf("expected errInvalidTree for short input")
+	} else if err.Error() != "invalid tree data" {
+		t.Fatalf("unexpected error %q", err)
+	}
+}
+
+func TestReadTreeInvalidRoot(t *testing.T) {
+	data := make([]byte, 64*3)
+	left := c4.Identify(strings.NewReader("left"))
+	right := c4.Identify(strings.NewReader("right"))
+	copy(data[64:128], left[:])
+	copy(data[128:192], right[:])
+	if _, err := c4.ReadTree(bytes.NewReader(data)); err == nil {
+		t.Fatalf("expected errInvalidTree for mismatched root")
+	} else if err.Error() != "invalid tree data" {
+		t.Fatalf("unexpected error %q", err)
+	}
+}
+
+func TestTreeStringRecomputes(t *testing.T) {
+	list := c4.IDs{
+		c4.Identify(strings.NewReader("alpha")),
+		c4.Identify(strings.NewReader("beta")),
+	}
+	tree := list.Tree()
+	expected := tree.ID()
+	for i := 0; i < 64; i++ {
+		tree[i] = 0
+	}
+	if got := tree.String(); got == "" {
+		t.Fatalf("expected non-empty tree string")
+	}
+	if tree.ID().Cmp(expected) != 0 {
+		t.Fatalf("tree string recompute produced unexpected root")
+	}
+}

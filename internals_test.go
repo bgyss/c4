@@ -78,6 +78,14 @@ func TestTree(t *testing.T) {
 
 }
 
+func TestListSizeBinarySearch(t *testing.T) {
+	// Choose a length that is not min or max; 5 produces total 11 where binary search needed.
+	total := treeSize(5) // 11
+	if got := listSize(total); got != 5 {
+		t.Fatalf("expected 5 entries from listSize(%d) but got %d", total, got)
+	}
+}
+
 var test_vectors = []string{"alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india"}
 var test_vector_ids = [][]string{
 	// Initial list (unsorted).
