@@ -615,3 +615,57 @@ func TestUnarshalJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestParseEmptyStringReturnsBadLength(t *testing.T) {
+	if _, err := c4.Parse(""); err == nil {
+		t.Fatalf("expected error for empty input")
+	} else if err.Error() != "c4 ids must be 90 characters long, input length 0" {
+		t.Fatalf("unexpected error %q", err)
+	}
+}
+
+func TestIDsIDHandlesDuplicates(t *testing.T) {
+	base := c4.Identify(strings.NewReader("duplicate"))
+	ids := c4.IDs{base, base}
+	tree := ids.Tree()
+	if got := tree.Len(); got != 1 {
+		t.Fatalf("expected deduplicated len 1, got %d", got)
+	}
+	if ids.ID().Cmp(tree.ID()) != 0 {
+		t.Fatalf("IDs.ID did not match tree ID")
+	}
+}
+
+func TestSumHandlesOrderAndIdentity(t *testing.T) {
+	low := c4.Identify(strings.NewReader("alpha"))
+	high := c4.Identify(strings.NewReader("omega"))
+	if bytes.Compare(high[:], low[:]) != 1 {
+		low, high = high, low
+	}
+	sortedSum := high.Sum(low)
+	reverseSum := low.Sum(high)
+	if sortedSum.Cmp(reverseSum) != 0 {
+		t.Fatalf("sum not commutative: %q != %q", sortedSum, reverseSum)
+	}
+	if self := high.Sum(high); self.Cmp(high) != 0 {
+		t.Fatalf("sum of identical ids should be identity, got %q", self)
+	}
+}
+
+func TestMarshalUnmarshalJSONNil(t *testing.T) {
+	var id c4.ID
+	data, err := id.MarshalJSON()
+	if err != nil {
+		t.Fatalf("unexpected error %q", err)
+	}
+	if string(data) != `""` {
+		t.Fatalf("unexpected marshal result %q", data)
+	}
+	var decoded c4.ID
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unexpected unmarshal error %q", err)
+	}
+	if !decoded.IsNil() {
+		t.Fatalf("expected nil id after unmarshal, got %s", decoded)
+	}
+}

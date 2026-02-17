@@ -162,17 +162,8 @@ jobs:
     - name: Run tests with coverage
       run: |
         go test -coverprofile=coverage.txt ./...
+        bash scripts/coverage_gate.sh coverage.txt
         go tool cover -html=coverage.txt -o coverage.html
-    
-    - name: Check coverage threshold
-      run: |
-        COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
-        echo "Current coverage: $COVERAGE%"
-        if (( $(echo "$COVERAGE < 75.0" | bc -l) )); then
-          echo "Coverage $COVERAGE% is below threshold of 75%"
-          exit 1
-        fi
-        echo "Coverage check passed: $COVERAGE%"
     
     - name: Upload coverage report
       uses: actions/upload-artifact@v4

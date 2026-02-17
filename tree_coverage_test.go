@@ -72,7 +72,7 @@ func TestReadTreeCoverage(t *testing.T) {
 }
 
 func TestListSizeEdgeCases(t *testing.T) {
-	if got := listSize(treeSize(1)); got != 0 {
+	if got := listSize(treeSize(1)); got != 1 {
 		t.Fatalf("unexpected list size for single node: %d", got)
 	}
 	if got := listSize(treeSize(5)); got != 5 {

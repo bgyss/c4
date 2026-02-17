@@ -8,12 +8,21 @@ import (
 	c4 "github.com/bgyss/c4/id"
 )
 
+var (
+	lstatFile    = os.Lstat
+	readDir      = os.ReadDir
+	evalSymlinks = func(path string) (string, error) {
+		return hooks.evalSymlinks(path)
+	}
+)
+
 func newItem(path string) (item map[string]interface{}) {
 	item = make(map[string]interface{})
-	f, err := os.Lstat(path)
+	f, err := lstatFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get status for \"%s\": %s\n", path, err)
-		hooks.exit(1)
+		exitFn(1)
+		return item
 	}
 
 	item["folder"] = f.IsDir()
@@ -26,21 +35,22 @@ func newItem(path string) (item map[string]interface{}) {
 }
 
 func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID) {
-	path, err := hooks.absPath(filename)
+	path, err := absPath(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to find absolute path for %s. %s\n", filename, err)
-		hooks.exit(1)
+		exitFn(1)
+		return nullId()
 	}
 
 	item := newItem(path)
 	if item["socket"] == true {
 		id = nullId()
 	} else if item["link"] == true && !links_flag {
-		newFilepath, _ := hooks.evalSymlinks(filename)
+		newFilepath, _ := evalSymlinks(filename)
 		item["link"] = newFilepath
 		id = nullId()
 	} else if item["link"] == true {
-		newFilepath, err := hooks.evalSymlinks(filename)
+		newFilepath, err := evalSymlinks(filename)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to follow link %s. %s\n", newFilepath, err)
 			item["link"] = newFilepath
@@ -53,10 +63,11 @@ func walkFilesystem(depth int, filename string, relative_path string) (id *c4.ID
 		}
 	} else {
 		if item["folder"] == true {
-			files, err := os.ReadDir(path)
+			files, err := readDir(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to read directory: %v\n", err)
-				hooks.exit(1)
+				exitFn(1)
+				return nullId()
 			}
 			var childIDs c4.Slice
 			for _, file := range files {

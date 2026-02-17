@@ -12,6 +12,11 @@ import (
 
 var _ Store = Folder("")
 
+var (
+	folderAbs  = filepath.Abs
+	idToString = func(id c4.ID) string { return id.String() }
+)
+
 // Folder is an implementation of the Store interface that uses c4 id nameed
 // files in a filsystem folder.
 type Folder string
@@ -19,29 +24,29 @@ type Folder string
 // validatePath prevents directory traversal attacks by ensuring the resolved path
 // stays within the folder boundary
 func (f Folder) validatePath(id c4.ID) (string, error) {
-	idStr := id.String()
+	idStr := idToString(id)
 	// Check for obvious path traversal attempts
 	if strings.Contains(idStr, "..") || strings.Contains(idStr, "/") || strings.Contains(idStr, "\\") {
 		return "", errors.New("invalid ID: contains path traversal characters")
 	}
-	
-	basePath, err := filepath.Abs(string(f))
+
+	basePath, err := folderAbs(string(f))
 	if err != nil {
 		return "", err
 	}
-	
+
 	targetPath := filepath.Join(basePath, idStr)
-	resolvedPath, err := filepath.Abs(targetPath)
+	resolvedPath, err := folderAbs(targetPath)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Ensure the resolved path is still within the base directory
 	if !strings.HasPrefix(resolvedPath, basePath+string(filepath.Separator)) &&
 		resolvedPath != basePath {
 		return "", errors.New("path traversal attack detected")
 	}
-	
+
 	return targetPath, nil
 }
 

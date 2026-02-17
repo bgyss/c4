@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"io"
-	"math/bits"
 	"strings"
 )
 
@@ -161,50 +160,27 @@ func buildRows(data []byte) [][]byte {
 // listSize computes the length of the list represented by a
 // tree given `total` number of branchs in the tree.
 func listSize(total int) int {
-	// Given that:
-	//    total >= 2*len(list)-1
-	//  and
-	//    total <= 2*len(list)-1+log2(len(list))
-	// The range of possible values for length are:
+	if total <= 0 {
+		return 0
+	}
+	min := 1
 	max := (total + 1) / 2
-	// min := max - log2(total)
-	// Safely convert total to uint, ensuring no overflow
-	var uintTotal uint
-	if total < 0 {
-		uintTotal = 0
-	} else if total > int(^uint(0)>>1) {
-		uintTotal = ^uint(0) >> 1
-	} else {
-		uintTotal = uint(total)
+	if max < min {
+		max = min
 	}
-	min := max - bits.Len(uintTotal)
-
-	if treeSize(min) == total {
-		return min
-	}
-	if treeSize(max) == total {
-		return max
-	}
-
-	// If not min or max, then we simply binary search for the matching size.
-	for {
+	for min <= max {
 		length := (min + max) / 2
 		t := treeSize(length)
-		// fmt.Printf("listSize min, max, length, t: %d, %d, %d, %d\n", min, max, length, t)
 		if t == total {
 			return length
 		}
-		if t > total {
-			max = length
-			continue
-		}
 		if t < total {
-			min = length
+			min = length + 1
 			continue
 		}
-
-		return length
+		max = length - 1
 	}
+	return 0
 }
 
 // treeSize computes the total number of branchs required to represent

@@ -136,9 +136,12 @@ var bucketList [][]byte = [][]byte{
 	pathBucket,
 }
 
-func init() {
-	// rand.Seed is no longer needed in Go 1.20+
-}
+var (
+	currentGOOS  = runtime.GOOS
+	pathContains = strings.Contains
+	boltOpen     = bbolt.Open
+	jsonMarshal  = json.Marshal
+)
 
 // Open opens or initializes a DB for the given path. When creating
 // file permissions are set to 0700, when opening an existing database file
@@ -163,11 +166,11 @@ func Open(path string, options *Options) (db *DB, err error) {
 	}
 
 	// For testing on Windows, enable faster sync to improve performance
-	if runtime.GOOS == "windows" && strings.Contains(path, "c4_tests") {
+	if currentGOOS == "windows" && pathContains(path, "c4_tests") {
 		opts.NoSync = true
 		opts.NoGrowSync = true
 	}
-	db.db, err = bbolt.Open(db_path, 0700, opts)
+	db.db, err = boltOpen(db_path, 0700, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -190,25 +193,27 @@ func Open(path string, options *Options) (db *DB, err error) {
 		return nil, err
 	}
 
-	saved_options := db.read_options()
-	if options == nil {
-		options = saved_options
-		if options == nil {
-			options = new(Options)
+	savedOptions := db.read_options()
+	if savedOptions == nil {
+		savedOptions = new(Options)
+	}
+
+	// Merge explicit options onto the stored values.
+	effective := *savedOptions
+	if options != nil {
+		if len(options.ExternalStore) > 0 {
+			effective.ExternalStore = append([]string(nil), options.ExternalStore...)
 		}
-	} else {
-		if options.ExternalStore != nil || len(options.ExternalStore) >= 0 {
-			db.storage = append(db.storage, options.ExternalStore...)
-		}
-		db.treeMaxSize = saved_options.TreeMaxSize
 		if options.TreeMaxSize > 0 {
-			db.treeMaxSize = options.TreeMaxSize
+			effective.TreeMaxSize = options.TreeMaxSize
 		}
-		db.treeStrategy = saved_options.TreeStrategy
 		if options.TreeStrategy != TreeStrategyNone {
-			db.treeStrategy = options.TreeStrategy
+			effective.TreeStrategy = options.TreeStrategy
 		}
 	}
+	db.storage = append(db.storage, effective.ExternalStore...)
+	db.treeMaxSize = effective.TreeMaxSize
+	db.treeStrategy = effective.TreeStrategy
 	db.write_options()
 
 	if len(db.storage) == 0 {
@@ -218,7 +223,7 @@ func Open(path string, options *Options) (db *DB, err error) {
 }
 
 func (db *DB) write_options() {
-	data, err := json.Marshal(Options{
+	data, err := jsonMarshal(Options{
 		ExternalStore: db.storage,
 		TreeStrategy:  db.treeStrategy,
 		TreeMaxSize:   db.treeMaxSize,
@@ -411,6 +416,9 @@ type entry struct {
 
 	// stop
 	st chan struct{}
+
+	// stop channel close guard (shared among entries from the same iterator)
+	so *sync.Once
 }
 
 func closeOnce(ch chan struct{}) {
@@ -435,6 +443,12 @@ func (e *entry) Value() c4.Digest {
 }
 
 func (e *entry) Close() {
+	e.k = nil
+	e.v = nil
+	e.e = nil
+	e.r = nil
+	e.st = nil
+	e.so = nil
 	entry_pool.Put(e)
 }
 
@@ -462,10 +476,16 @@ func (e *entry) Err() error {
 }
 
 func (e *entry) Stop() {
-	defer func() {
-		_ = recover() // stop channel can already be closed by stream teardown
-	}()
-	close(e.st)
+	if e.st == nil {
+		return
+	}
+	if e.so != nil {
+		e.so.Do(func() {
+			closeOnce(e.st)
+		})
+		return
+	}
+	closeOnce(e.st)
 }
 
 var entry_pool = sync.Pool{
@@ -477,10 +497,13 @@ var entry_pool = sync.Pool{
 func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 	out := make(chan Entry)
 	stop := make(chan struct{})
+	stopOnce := new(sync.Once)
 	go func() {
 		defer func() {
 			close(out)
-			closeOnce(stop)
+			stopOnce.Do(func() {
+				closeOnce(stop)
+			})
 		}()
 
 		_ = db.db.View(func(t *bbolt.Tx) error {
@@ -494,10 +517,12 @@ func (db *DB) KeyGetAll(key_prefix ...string) <-chan Entry {
 					ent := entry_pool.Get().(*entry)
 					ent.k = k
 					ent.v = v
+					ent.e = nil
 					if len(v) != 64 {
 						ent.e = errors.New("wrong value size")
 					}
 					ent.st = stop
+					ent.so = stopOnce
 
 					select {
 					case out <- ent:
@@ -614,10 +639,13 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 	// A link key contains both digests in the relationship, 'source' + 'target'
 	out := make(chan Entry)
 	stop := make(chan struct{})
+	stopOnce := new(sync.Once)
 	go func() {
 		defer func() {
 			close(out)
-			closeOnce(stop)
+			stopOnce.Do(func() {
+				closeOnce(stop)
+			})
 		}()
 		_ = db.db.View(func(t *bbolt.Tx) error {
 			c := t.Bucket(c4Bucket).Bucket(linkBucket).Cursor()
@@ -629,8 +657,10 @@ func (db *DB) LinkGet(relationship string, source c4.Digest) <-chan Entry {
 				ent := entry_pool.Get().(*entry)
 				ent.k = source
 				ent.v = k[64:]
+				ent.e = nil
 				ent.r = v // relationship
 				ent.st = stop
+				ent.so = stopOnce
 
 				select {
 				case out <- ent:
@@ -682,10 +712,13 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 	// A link key contains both digests in the relationship, 'source' + 'target'
 	out := make(chan Entry)
 	stop := make(chan struct{})
+	stopOnce := new(sync.Once)
 	go func() {
 		defer func() {
 			close(out)
-			closeOnce(stop)
+			stopOnce.Do(func() {
+				closeOnce(stop)
+			})
 		}()
 		if len(sources) == 0 {
 			_ = db.db.View(func(t *bbolt.Tx) error {
@@ -705,7 +738,9 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 					rel := make([]byte, len(v))
 					copy(rel, v)
 					ent.r = rel
+					ent.e = nil
 					ent.st = stop
+					ent.so = stopOnce
 
 					select {
 					case out <- ent:
@@ -735,7 +770,9 @@ func (db *DB) LinkGetAll(sources ...c4.Digest) <-chan Entry {
 					rel := make([]byte, len(v))
 					copy(rel, v)
 					ent.r = rel
+					ent.e = nil
 					ent.st = stop
+					ent.so = stopOnce
 
 					select {
 					case out <- ent:
@@ -834,7 +871,7 @@ func (db *DB) TreeGet(tree_digest c4.Digest) (*c4.Tree, error) {
 			return nil
 		}
 		if len(data) == 64 {
-			pb := t.Bucket(c4Bucket).Bucket(treeBucket)
+			pb := t.Bucket(c4Bucket).Bucket(pathBucket)
 			path_data := pb.Get(data)
 			if path_data != nil {
 				path = string(path_data)

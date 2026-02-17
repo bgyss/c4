@@ -198,10 +198,11 @@ func TestTreeGetExternalPathAndValidation(t *testing.T) {
 
 	if err := c4db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		pb := tx.Bucket(c4Bucket).Bucket(pathBucket)
 		if err := b.Put(digest, pointer); err != nil {
 			return err
 		}
-		return b.Put(pointer, []byte(validPath))
+		return pb.Put(pointer, []byte(validPath))
 	}); err != nil {
 		t.Fatalf("failed to seed tree indirection: %v", err)
 	}
@@ -217,10 +218,11 @@ func TestTreeGetExternalPathAndValidation(t *testing.T) {
 	badPointer := c4.Identify(strings.NewReader("bad-pointer")).Digest()
 	if err := c4db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		pb := tx.Bucket(c4Bucket).Bucket(pathBucket)
 		if err := b.Put(digest, badPointer); err != nil {
 			return err
 		}
-		return b.Put(badPointer, []byte("../outside.bin"))
+		return pb.Put(badPointer, []byte("../outside.bin"))
 	}); err != nil {
 		t.Fatalf("failed to seed traversal path: %v", err)
 	}
@@ -234,10 +236,11 @@ func TestTreeGetExternalPathAndValidation(t *testing.T) {
 	}
 	if err := c4db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		pb := tx.Bucket(c4Bucket).Bucket(pathBucket)
 		if err := b.Put(digest, badPointer); err != nil {
 			return err
 		}
-		return b.Put(badPointer, []byte(outsidePath))
+		return pb.Put(badPointer, []byte(outsidePath))
 	}); err != nil {
 		t.Fatalf("failed to seed outside path: %v", err)
 	}
@@ -663,10 +666,11 @@ func TestTreeAndWriteFileErrorBranches(t *testing.T) {
 	pointer := c4.Identify(strings.NewReader("tree-pointer")).Digest()
 	if err := c4db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		pb := tx.Bucket(c4Bucket).Bucket(pathBucket)
 		if err := b.Put(digest, pointer); err != nil {
 			return err
 		}
-		return b.Put(pointer, []byte(missingPath))
+		return pb.Put(pointer, []byte(missingPath))
 	}); err != nil {
 		t.Fatalf("seed tree path error: %v", err)
 	}
@@ -678,10 +682,11 @@ func TestTreeAndWriteFileErrorBranches(t *testing.T) {
 	// Path normalization branch where filepath.Abs(cleanPath) fails.
 	if err := c4db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(c4Bucket).Bucket(treeBucket)
+		pb := tx.Bucket(c4Bucket).Bucket(pathBucket)
 		if err := b.Put(digest, pointer); err != nil {
 			return err
 		}
-		return b.Put(pointer, []byte("\x00"))
+		return pb.Put(pointer, []byte("\x00"))
 	}); err != nil {
 		t.Fatalf("seed invalid path error: %v", err)
 	}

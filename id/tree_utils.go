@@ -126,10 +126,6 @@ func log2(x int) int {
 	if x <= 0 {
 		return 0
 	}
-	// Safely convert int to uint64, checking for negative values
-	if x < 0 {
-		return 0
-	}
 	return bitsLen64(uint64(x)) - 1
 }
 
