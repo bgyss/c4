@@ -157,6 +157,28 @@ go build -o c4 ./cmd/c4
 go test ./...
 ```
 
+### Docker (Including Synology Container Manager)
+
+```bash
+# Build from source
+docker build -t c4:local .
+
+# Identify piped data
+echo "Hello World" | docker run --rm -i c4:local
+
+# Identify files in the current directory (mounted read-only at /data)
+docker run --rm -v "$PWD:/data:ro" c4:local -R /data
+```
+
+For Synology DSM 7+ Container Manager:
+
+1. Pull `avalancheio/c4:latest` in the Registry tab.
+2. The published image is multi-arch and includes both `linux/amd64` (x86_64 Synology) and `linux/arm64` variants.
+3. Create a project using `docker-compose.synology.yml` from this repository.
+4. Update `/volume1/data` in that file to the NAS folder you want to scan.
+5. Keep restart policy set to `no` because this is a command-style container (it exits after work is done).
+6. Run the project and view logs to collect generated C4 IDs.
+
 ---
 
 ## Testing & Quality
