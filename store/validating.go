@@ -7,7 +7,7 @@ import (
 	"hash"
 	"io"
 
-	"github.com/bgyss/c4"
+	"github.com/Avalanche-io/c4"
 )
 
 var _ Store = &Validating{}
@@ -15,8 +15,8 @@ var _ Store = &Validating{}
 // The Validating store wrapps another c4 store and validates all c4 ids with
 // the data that is read or written. If the data does not match the id, then
 // ErrInvalidC4ID will be returned.
-// C4 id validity is checked when `Close()` is called on the reader, or writter,
-// or when an io.EOF is encountered while reading or writting.
+// C4 id validity is checked when `Close()` is called on the reader, or writer,
+// or when an io.EOF is encountered while reading or writing.
 type Validating struct {
 	s Store
 }
@@ -48,7 +48,10 @@ func (v *validatingReader) Read(b []byte) (int, error) {
 }
 
 func (v *validatingReader) isValid() bool {
-	return bytes.Equal(v.id[:], v.h.Sum(nil))
+	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
+		return true
+	}
+	return false
 }
 
 func (v *validatingReader) Close() error {
@@ -74,8 +77,8 @@ func (v *validatingWriter) Write(b []byte) (int, error) {
 	}
 	if err == io.EOF {
 		if !v.isValid() {
-			_ = v.w.Close()
-			_ = v.remove(v.id)
+			v.w.Close()
+			v.remove(v.id)
 			return n, ErrInvalidID
 		}
 	}
@@ -83,13 +86,16 @@ func (v *validatingWriter) Write(b []byte) (int, error) {
 }
 
 func (v *validatingWriter) isValid() bool {
-	return bytes.Equal(v.id[:], v.h.Sum(nil))
+	if bytes.Compare(v.id[:], v.h.Sum(nil)) == 0 {
+		return true
+	}
+	return false
 }
 
 func (v *validatingWriter) Close() error {
 	err := v.w.Close()
 	if !v.isValid() {
-		_ = v.remove(v.id)
+		v.remove(v.id)
 		return ErrInvalidID
 	}
 	return err
@@ -115,6 +121,10 @@ func (v *Validating) Create(id c4.ID) (io.WriteCloser, error) {
 	}
 	return &validatingWriter{sha512.New(), id, w, v.s.Remove}, nil
 }
+
+func (v *Validating) Has(id c4.ID) bool { return v.s.Has(id) }
+
+func (v *Validating) Put(r io.Reader) (c4.ID, error) { return v.s.Put(r) }
 
 func (v *Validating) Remove(id c4.ID) error {
 	return v.s.Remove(id)

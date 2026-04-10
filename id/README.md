@@ -1,6 +1,0 @@
-### Deprecated
-
-This subdirectory contains an older version of the c4 id package this is
-deprecated in favor of github.com/bgyss/c4. The newer package is
-much simpler and faster than this one, which is only kept for now to provide
-backward compatibility.

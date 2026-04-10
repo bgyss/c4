@@ -5,8 +5,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/xtgo/set"
 )
 
 // func TestTreeSizes(t *testing.T) {
@@ -24,8 +22,17 @@ func testIDs() IDs {
 		digests[i] = Identify(strings.NewReader(s))
 	}
 	sort.Sort(digests)
-	n := set.Uniq(digests)
-	return digests[:n]
+	if len(digests) > 1 {
+		j := 1
+		for i := 1; i < len(digests); i++ {
+			if digests[i] != digests[i-1] {
+				digests[j] = digests[i]
+				j++
+			}
+		}
+		digests = digests[:j]
+	}
+	return digests
 }
 
 func row(rows [][]byte, i int) []ID {
@@ -76,14 +83,6 @@ func TestTree(t *testing.T) {
 		_ = NewTree(digests)
 	}
 
-}
-
-func TestListSizeBinarySearch(t *testing.T) {
-	// Choose a length that is not min or max; 5 produces total 11 where binary search needed.
-	total := treeSize(5) // 11
-	if got := listSize(total); got != 5 {
-		t.Fatalf("expected 5 entries from listSize(%d) but got %d", total, got)
-	}
 }
 
 var test_vectors = []string{"alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india"}

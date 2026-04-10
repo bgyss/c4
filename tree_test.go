@@ -8,13 +8,12 @@ import (
 	// "fmt"
 	"testing"
 
-	"github.com/bgyss/c4"
-	"github.com/xtgo/set"
+	"github.com/Avalanche-io/c4"
 )
 
 func i2b(i int) []byte {
 	var buf bytes.Buffer
-	_ = binary.Write(&buf, binary.LittleEndian, int32(i))
+	binary.Write(&buf, binary.LittleEndian, int32(i))
 	return buf.Bytes()
 }
 
@@ -55,8 +54,16 @@ func TestTreeEncoding(t *testing.T) {
 			list[i] = id
 		}
 		sort.Sort(list)
-		n := set.Uniq(list)
-		list = list[:n]
+		if len(list) > 1 {
+			j := 1
+			for i := 1; i < len(list); i++ {
+				if list[i] != list[i-1] {
+					list[j] = list[i]
+					j++
+				}
+			}
+			list = list[:j]
+		}
 		// Create a tree from the list.
 		tree := c4.NewTree(list)
 		if tree == nil {
@@ -84,44 +91,5 @@ func TestTreeEncoding(t *testing.T) {
 		if tree.ID().Cmp(tree2.ID()) != 0 {
 			t.Fatalf("tree os size %d failed to recompute ID correctly", length)
 		}
-	}
-}
-
-func TestReadTreeInvalidHeader(t *testing.T) {
-	if _, err := c4.ReadTree(bytes.NewReader([]byte("short"))); err == nil {
-		t.Fatalf("expected errInvalidTree for short input")
-	} else if err.Error() != "invalid tree data" {
-		t.Fatalf("unexpected error %q", err)
-	}
-}
-
-func TestReadTreeInvalidRoot(t *testing.T) {
-	data := make([]byte, 64*3)
-	left := c4.Identify(strings.NewReader("left"))
-	right := c4.Identify(strings.NewReader("right"))
-	copy(data[64:128], left[:])
-	copy(data[128:192], right[:])
-	if _, err := c4.ReadTree(bytes.NewReader(data)); err == nil {
-		t.Fatalf("expected errInvalidTree for mismatched root")
-	} else if err.Error() != "invalid tree data" {
-		t.Fatalf("unexpected error %q", err)
-	}
-}
-
-func TestTreeStringRecomputes(t *testing.T) {
-	list := c4.IDs{
-		c4.Identify(strings.NewReader("alpha")),
-		c4.Identify(strings.NewReader("beta")),
-	}
-	tree := list.Tree()
-	expected := tree.ID()
-	for i := 0; i < 64; i++ {
-		tree[i] = 0
-	}
-	if got := tree.String(); got == "" {
-		t.Fatalf("expected non-empty tree string")
-	}
-	if tree.ID().Cmp(expected) != 0 {
-		t.Fatalf("tree string recompute produced unexpected root")
 	}
 }

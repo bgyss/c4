@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/xtgo/set"
 )
 
 const (
@@ -20,11 +19,11 @@ const (
 var (
 	lut     [256]byte
 	lowbyte = byte('1')
-	prefix  = []byte{'c', '4'} // Used for validation, keep for compatibility
-	idlen   = 90               // Keep for potential API compatibility
+	prefix  = []byte{'c', '4'}
+	idlen   = 90
 
 	// Id of empty string
-	nilID = Identify(bytes.NewReader([]byte{})) // Keep for potential API compatibility
+	nilID = Identify(bytes.NewReader([]byte{}))
 
 	// Id with all bytes set to 0.
 	voidID ID
@@ -45,9 +44,9 @@ func (e errBadLength) Error() string {
 	return "c4 ids must be 90 characters long, input length " + strconv.Itoa(int(e))
 }
 
-type errNil struct{} // Keep for potential API compatibility
+type errNil struct{}
 
-func (e errNil) Error() string { // Keep for potential API compatibility
+func (e errNil) Error() string {
 	return "unexpected nil id"
 }
 
@@ -69,14 +68,6 @@ func init() {
 	}
 }
 
-// Explicit acknowledgment of potentially unused variables kept for API compatibility
-var (
-	_ = prefix  // Keep for validation and API compatibility
-	_ = idlen   // Keep for potential API compatibility
-	_ = nilID   // Keep for potential API compatibility
-	_ = errNil{} // Keep error type for API compatibility
-)
-
 // Generate an id from an io.Reader
 func Identify(src io.Reader) (id ID) {
 	h := sha512.New()
@@ -88,45 +79,26 @@ func Identify(src io.Reader) (id ID) {
 	return id
 }
 
-/*
-// Encoder generates an ID for a contiguous bock of data.
-type Encoder struct {
-	err error
-	h   hash.Hash
-}
-
-// NewIDEncoder makes a new Encoder.
-func NewEncoder() *Encoder {
-	return &Encoder{
-		h: sha512.New(),
-	}
-}
-
-// Write writes bytes to the hash that makes up the ID.
-func (e *Encoder) Write(b []byte) (int, error) {
-	return e.h.Write(b)
-}
-
-// ID returns the ID for the bytes written so far.
-func (e *Encoder) ID() (id ID) {
-	copy(id[:], e.h.Sum(nil))
-	return id
-}
-
-// Reset the encoder so it can identify a new block of data.
-func (e *Encoder) Reset() {
-	e.h.Reset()
-}
-*/
 // ID represents a C4 ID.
 type ID [64]byte
 
+// Digest represents the raw 64-byte SHA-512 hash (simplified from id subpackage for db compatibility)
+type Digest []byte
+
+// ID converts a Digest to an ID
+func (d Digest) ID() ID {
+	var id ID
+	copy(id[:], d)
+	return id
+}
+
 // Identifiable is an interface that requires an ID() method that returns
-// the c4 ID of the of the object.
+// the c4 ID of the object.
 type Identifiable interface {
 	ID() ID
 }
 
+// IsNil reports whether the ID is the zero value (all zero bytes).
 func (id ID) IsNil() bool {
 	for _, b := range id[:] {
 		if b != 0 {
@@ -184,16 +156,15 @@ func (id ID) Digest() []byte {
 // Cmp compares two IDs.
 // There are 3 possible return values.
 //
-// -1 : Argument id is less than calling id.
-//  0 : Argument id and calling id are identical.
-// +1 : Argument id is greater than calling id.
+// -1 : Calling id is less than argument id.
+//
+//	0 : Calling id and argument id are identical.
+//
+// +1 : Calling id is greater than argument id.
 //
 // Comparison is done on the actual numerical value of the ids.
 // Not the string representation.
 func (l ID) Cmp(r ID) int {
-	if r.IsNil() {
-		return -1
-	}
 	return bytes.Compare(l[:], r[:])
 }
 
@@ -230,10 +201,12 @@ func (id ID) Less(idArg ID) bool {
 func (l ID) Sum(r ID) ID {
 	switch bytes.Compare(l[:], r[:]) {
 	case -1:
-		// If the left side is larger then they are already in order, do nothing
-	case 1: // If the right side is larger swap them
+		// Left is smaller, already in order
+	case 1:
+		// Left is larger, swap to maintain canonical order
 		l, r = r, l
-	case 0: // If they are identical return no sum needed, so just return one.
+	case 0:
+		// Identical, no sum needed
 		return l
 	}
 
@@ -246,7 +219,8 @@ func (l ID) Sum(r ID) ID {
 }
 
 func (id *ID) UnmarshalJSON(data []byte) error {
-	s := strings.Trim(string(data), `"' \t`)
+	// Remove JSON quotes only (not ID content)
+	s := strings.Trim(string(data), `"`)
 	if len(s) == 0 {
 		return nil
 	}
@@ -276,8 +250,17 @@ func (d IDs) Tree() Tree {
 	if !sort.IsSorted(d) {
 		sort.Sort(d)
 	}
-	n := set.Uniq(d)
-	d = d[:n]
+	// Deduplicate sorted slice in-place
+	if len(d) > 1 {
+		j := 1
+		for i := 1; i < len(d); i++ {
+			if d[i] != d[i-1] {
+				d[j] = d[i]
+				j++
+			}
+		}
+		d = d[:j]
+	}
 	t := NewTree(d)
 	t.compute()
 	return t

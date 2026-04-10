@@ -1,10 +1,10 @@
 services:
   c4:
-    image: ghcr.io/bgyss/c4:latest
+    image: avalancheio/c4:latest
     container_name: c4
     working_dir: /data
     volumes:
       - /volume1/data:/data:ro
     # Example: recursively identify files in the mounted share.
-    command: ["-R", "/data"]
+    command: ["id", "/data"]
     restart: "no"

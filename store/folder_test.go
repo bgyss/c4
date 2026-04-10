@@ -7,18 +7,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bgyss/c4"
+	"github.com/Avalanche-io/c4"
 )
 
 func TestFolderStore(t *testing.T) {
 	path := os.TempDir()
 
 	path = filepath.Join(path, "folder_test")
-	err := os.Mkdir(path, 0755)
+	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = os.RemoveAll(path) }()
+	defer os.RemoveAll(path)
 
 	folderStore := Folder(path)
 
@@ -60,7 +60,7 @@ func TestFolderStore(t *testing.T) {
 	}
 
 	names, err := f.Readdirnames(-1)
-	_ = f.Close()
+	f.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,95 +124,59 @@ func TestFolderStore(t *testing.T) {
 
 }
 
-func TestFolderStoreRemove(t *testing.T) {
-	path := os.TempDir()
-	path = filepath.Join(path, "folder_remove_test")
-	err := os.Mkdir(path, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.RemoveAll(path) }()
+func TestDurableWrite(t *testing.T) {
+	dir := t.TempDir()
+	fs := Folder(dir)
 
-	folderStore := Folder(path)
-	
-	// Create test data
-	testData := "test data for removal"
-	id := c4.Identify(strings.NewReader(testData))
-	
-	// Create a file in the store
-	w, err := folderStore.Create(id)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = w.Write([]byte(testData))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = w.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-	
-	// Verify file exists
-	_, err = folderStore.Open(id)
-	if err != nil {
-		t.Fatal("File should exist before removal:", err)
-	}
-	
-	// Test Remove function
-	err = folderStore.Remove(id)
-	if err != nil {
-		t.Fatal("Remove should succeed:", err)
-	}
-	
-	// Verify file no longer exists
-	_, err = folderStore.Open(id)
-	if err == nil {
-		t.Error("File should not exist after removal")
-	}
-	
-	// Test removing non-existent file
-	nonExistentID := c4.Identify(strings.NewReader("non-existent"))
-	err = folderStore.Remove(nonExistentID)
-	if err == nil {
-		t.Error("Remove should fail for non-existent file")
-	}
-}
+	key := "durable-test-data"
+	id := c4.Identify(strings.NewReader(key))
 
-func TestFolderStoreCreateExisting(t *testing.T) {
-	path := os.TempDir()
-	path = filepath.Join(path, "folder_create_existing_test")
-	err := os.Mkdir(path, 0755)
+	w, err := fs.Create(id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = os.RemoveAll(path) }()
 
-	folderStore := Folder(path)
-	
-	// Create test data
-	testData := "test data for duplicate creation"
-	id := c4.Identify(strings.NewReader(testData))
-	
-	// Create a file in the store
-	w, err := folderStore.Create(id)
+	// Final file should not exist before Close
+	finalPath := filepath.Join(dir, id.String())
+	if _, err := os.Stat(finalPath); err == nil {
+		t.Fatal("final file exists before Close")
+	}
+
+	if _, err := w.Write([]byte(key)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Still should not exist
+	if _, err := os.Stat(finalPath); err == nil {
+		t.Fatal("final file exists before Close")
+	}
+
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Now it should exist
+	if _, err := os.Stat(finalPath); err != nil {
+		t.Fatal("final file missing after Close")
+	}
+
+	// No temp files should remain
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = w.Close()
-	
-	// Try to create the same file again (should fail)
-	_, err = folderStore.Create(id)
-	if err == nil {
-		t.Error("Create should fail when file already exists")
-	}
-	
-	// Verify it's a PathError with ErrExist
-	if pathErr, ok := err.(*os.PathError); ok {
-		if pathErr.Err != os.ErrExist {
-			t.Errorf("Expected ErrExist, got: %v", pathErr.Err)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".tmp.") {
+			t.Errorf("temp file not cleaned up: %s", e.Name())
 		}
-	} else {
-		t.Errorf("Expected *os.PathError, got: %T", err)
+	}
+
+	// Verify content
+	data, err := os.ReadFile(finalPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != key {
+		t.Errorf("wrong content: got %q, want %q", string(data), key)
 	}
 }

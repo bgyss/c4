@@ -1,285 +1,264 @@
+# C4 — Universal Content Identification
 
-# C4 ID - Universally Unique and Consistent Identification
+*Everything in Unix is a file, except for the filesystem itself. Until now.*
 
+[![CI](https://github.com/Avalanche-io/c4/actions/workflows/ci.yml/badge.svg)](https://github.com/Avalanche-io/c4/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Avalanche-io/c4)](https://goreportcard.com/report/github.com/Avalanche-io/c4)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Avalanche-io/c4.svg)](https://pkg.go.dev/github.com/Avalanche-io/c4)
+[![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bgyss/c4)](https://goreportcard.com/report/github.com/bgyss/c4)
-[![CI](https://github.com/bgyss/c4/workflows/CI/badge.svg)](https://github.com/bgyss/c4/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/bgyss/c4/branch/master/graph/badge.svg)](https://codecov.io/gh/bgyss/c4)
-[![GoDoc](https://godoc.org/github.com/bgyss/c4?status.svg)](https://godoc.org/github.com/avalanche-io/c4)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/github/release/bgyss/c4.svg)](https://github.com/bgyss/c4/releases/latest)
-
-```go
-import "github.com/bgyss/c4"
-```
-
-This is a Go package that implements the C4 ID system **SMPTE standard ST 2114:2017**. C4 IDs are universally unique and consistent identifiers that standardize the derivation and formatting of data identification so that all users independently agree on the identification of any block or set of blocks of data.
-
-C4 IDs are 90 character long strings suitable for use in filenames, URLs, database fields, or anywhere else that a string identifier might normally be used. In ram C4 IDs are represented in a 64 byte "digest" format.
-
-#### Features
-
-- A single C4 id can represent multiple files.
-- C4 ids are unique, random, and unforgeable.
-- C4 ids are identical for the same file in different locations or points in time.
-- A network connection is not required to generate C4 ids.
-- A C4 id can be used in filenames, URLs, json and xml.
-- C4 ids can be selected easily with double click (_a problem for many unique identifiers_).
-- Easily discover C4 ids in arbitrary text with a simple regex `c4[1-9A-HJ-NP-Za-km-z]{88}`
-- Naming files by their C4 id automatically deduplicates them.
-
-#### Comparison of Encodings
-
-C4 is the shortest self identifying SHA-512 encoding and is the only standardized encoding.
-To illustrate, the following is the SHA-512 of "foo" in hex, base64 and c4 encodings:
-
-```yaml
-# encoding     length   id
-  hex          135:     sha512-f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7
-  base64        95:     sha512-9/u6bgY2+JDlb7vzKD5STG+jIErimDgtYkdB0NxmODJuKCxBvl5CVNiCB3LFUYosWowMf37aGVlKfrU5RT4e1w==
-  c4            90:     c43inc2qGhSWQUMRvDMW6GAjJnRFY5sxq399wcUcWLTuPai84A2QWTfYu1gAW8f5FmZFGeYpLsSPyrSUh9Ao3J68Cc
-```
-
-### Example Usage
-
-```go
-package main
-
-import (
-  "fmt"
-  "strings"
-
-  "github.com/bgyss/c4"
-)
-
-func main() {
-
-  // Generate a C4 ID for any contiguous block of data...
-  id := c4.Identify(strings.NewReader("alfa"))
-  fmt.Println(id)
-  // output: c43zYcLni5LF9rR4Lg4B8h3Jp8SBwjcnyyeh4bc6gTPHndKuKdjUWx1kJPYhZxYt3zV6tQXpDs2shPsPYjgG81wZM1
-
-  // Generate a C4 ID for any number of non-contiguous blocks...
-  var ids c4.IDs
-  var inputs = []string{"alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india"}
-  for _, input := range inputs {
-    ids = append(ids, c4.Identify(strings.NewReader(input)))
-  }
-  fmt.Println(ids.ID())
-  // output: c435RzTWWsjWD1Fi7dxS3idJ7vFgPVR96oE95RfDDT5ue7hRSPENePDjPDJdnV46g7emDzWK8LzJUjGESMG5qzuXqq
-}
-```
-
----
-
-## Installation & Building
-
-### Using Nix (Recommended)
-
-This project includes a Nix flake for reproducible builds and development environments across multiple platforms.
-
-#### Quick Start
+C4 is a file management system designed to simplify distributed
+systems. It decouples file storage and transport from organization
+and metadata by providing a standardized content-derived identifier,
+and using these identifiers in place of file content in a simple,
+readable, text-based filesystem format.
 
 ```bash
-# Build the CLI tool
+$ echo "hello" | c4
+c447Fm3BJZQ62765jMZJH4m28hrDM7Szbj9CUmj4F4gnvyDYXYz4WfnK2nYRhFvRgYEectEXYBYWLDpLo6XGNAfKdt
+```
+
+That 90-character string is a [SMPTE ST 2114:2017](https://ieeexplore.ieee.org/document/7971777)
+identifier — an international standard built on SHA-512. Run it on
+any machine, in any language, ten years from now. Same input, same ID.
+Unlike a UUID, which is assigned arbitrarily and requires coordination
+to be meaningful, a C4 ID is discovered from the data itself. If two
+people have a file with the same ID, they have identical copies of the
+same file.
+
+C4 extends this idea to entire filesystems. `c4 id` produces a c4m
+file — a plain-text description that captures the identity of every
+file and directory in a tree:
+
+```bash
+$ c4 id ./project/
+-rw-r--r-- 2026-03-18T22:22:57Z 13 README.md c44iCq6un9W47x7ydjJSWp4arMJ...
+drwxr-xr-x 2026-03-18T22:22:57Z 66 src/ c44nbgL6nkBWsEBDCUCr4LufsjVhJt...
+  -rw-r--r-- 2026-03-18T22:22:57Z 66 main.go c43Q4j81SxGkV9FhbeW23YrMTj6...
+```
+
+A c4m file is just text. Pipe it, grep it, diff it, email it. Each
+line looks like `ls -l` with a content ID at the end. The format is
+designed to compose with `awk`, `sort`, `grep`, and the rest of the
+Unix toolkit — no special tools required, though C4 provides some
+that are useful.
+
+## Install
+
+### Homebrew (recommended — includes c4 and c4sh)
+
+```bash
+brew install mrjoshuak/tap/c4
+```
+
+### Binary downloads
+
+Pre-built archives for macOS, Linux, and Windows:
+[c4toolkit releases](https://github.com/Avalanche-io/c4toolkit/releases)
+
+### From source
+
+```bash
+go install github.com/Avalanche-io/c4/cmd/c4@latest
+go install github.com/Avalanche-io/c4sh@latest
+```
+
+### Nix
+
+This repository includes a Nix flake for reproducible builds and a
+development shell across macOS and Linux.
+
+```bash
+# Build the CLI
 nix build
 
-# Run directly without installing
-echo "Hello World" | nix run
+# Run the default app
+echo "hello" | nix run
 
-# Enter development environment
-nix develop
-```
-
-#### Supported Platforms
-
-The flake supports building for all major platforms:
-- `aarch64-darwin` (Apple Silicon macOS)
-- `aarch64-linux` (ARM64 Linux)
-- `i686-linux` (32-bit x86 Linux)
-- `x86_64-darwin` (Intel macOS)
-- `x86_64-linux` (64-bit x86 Linux)
-
-#### Platform-Specific Builds
-
-```bash
-# Build for specific platform
-nix build .#packages.x86_64-linux.c4
-nix build .#packages.aarch64-linux.c4
-
-# View all available platforms
-nix flake show --all-systems
-```
-
-#### Development Environment
-
-The development shell includes all necessary tools:
-
-```bash
-# Enter the development environment
+# Enter the development shell
 nix develop
 
-# Available tools in the shell:
-go build ./cmd/c4          # Build the CLI tool
-go test ./...              # Run all tests
-go test -cover ./...       # Run tests with coverage
-golangci-lint run          # Run linter
-```
-
-#### CI/CD Integration
-
-```bash
-# Run all checks (build, test, lint)
+# Run the packaged checks
 nix flake check
-
-# Run checks for all platforms
-nix flake check --all-systems
 ```
 
-#### direnv Integration (Optional)
+If you use `direnv`, run `direnv allow` once in the repo root to load
+the flake automatically.
 
-For automatic environment loading when entering the directory:
+### Docker
 
-```bash
-# Allow direnv (if you have direnv installed)
-direnv allow
-
-# The development environment will now load automatically
-```
-
-### Traditional Go Build
+Build and run the CLI in a container:
 
 ```bash
-# Build manually with Go
-go build -o c4 ./cmd/c4
-
-# Run tests
-go test ./...
-```
-
-### Docker (Including Synology Container Manager)
-
-```bash
-# Pull a prebuilt image from GitHub Container Registry
-docker pull ghcr.io/bgyss/c4:latest
-
-# Build from source
 docker build -t c4:local .
-
-# Identify piped data
-echo "Hello World" | docker run --rm -i c4:local
-
-# Identify files in the current directory (mounted read-only at /data)
-docker run --rm -v "$PWD:/data:ro" c4:local -R /data
+docker run --rm -v "$PWD:/data:ro" c4:local id /data
 ```
 
-For Synology DSM 7+ Container Manager:
+For Synology DSM 7+ Container Manager, this fork also includes a
+ready-to-edit [`docker-compose.synology.yml`](./docker-compose.synology.yml)
+example. Update `/volume1/data` to the NAS folder you want to scan, then
+run the project and inspect the logs for the emitted IDs or c4m output.
 
-1. Pull `ghcr.io/bgyss/c4:latest` in the Registry tab.
-2. The published image is multi-arch and includes both `linux/amd64` (x86_64 Synology) and `linux/arm64` variants.
-3. Create a project using `docker-compose.synology.yml` from this repository.
-4. Update `/volume1/data` in that file to the NAS folder you want to scan.
-5. Keep restart policy set to `no` because this is a command-style container (it exits after work is done).
-6. Run the project and view logs to collect generated C4 IDs.
-
----
-
-## Testing & Quality
-
-### Running Tests
+### Other languages
 
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run tests with verbose output
-go test -v ./...
-
-# Run benchmarks
-go test -bench=. -run=^$ ./...
+pip install c4py                    # Python
+npm install @avalanche-io/c4        # TypeScript / JavaScript
 ```
 
-### Coverage Reports
+See [c4toolkit](https://github.com/Avalanche-io/c4toolkit) for the
+full suite and version matrix.
 
-The project maintains high test coverage across all packages:
+## What can you do with it?
 
-- **Overall Coverage**: ~78%
-- **Core Package**: 92.4%
-- **Store Package**: 80.9%
-- **Manifest Package**: 72.9%
-- **Util Package**: 100%
-
-### Performance Benchmarks
-
-Performance benchmarks are run continuously to track regression:
+**Know what changed.** Snapshot a directory, come back later, compare:
 
 ```bash
-# Run core performance benchmarks
-go test -bench=BenchmarkIdentify -benchmem ./...
-
-# Run memory allocation benchmarks
-go test -bench=BenchmarkMemoryAllocation -benchmem ./...
-
-# Run platform-specific benchmarks
-go test -bench=. -benchmem ./...
+c4 id ./deliverables/ > monday.c4m
+# ... work happens ...
+c4 diff monday.c4m ./deliverables/
 ```
 
-### Code Quality
-
-The project uses several tools to maintain code quality:
-
-- **golangci-lint**: Comprehensive linting with 20+ enabled linters
-- **gosec**: Security vulnerability scanning
-- **govulncheck**: Dependency vulnerability checking
-- **gofmt**: Code formatting consistency
-- **go vet**: Static analysis for potential issues
-
-### Continuous Integration
-
-All code is validated through GitHub Actions CI/CD:
-
-- ✅ Multi-platform testing (Linux, macOS, Windows)
-- ✅ Go toolchain validation (1.24.x)
-- ✅ Automated security scanning
-- ✅ Performance regression testing
-- ✅ Coverage reporting
-- ✅ Dependency vulnerability checks
-- ✅ Nix build validation
-
----
-
-### Releases
-
-Current release: [v0.8.2](https://github.com/bgyss/c4/tree/v0.8.2)
-
-### Links
-
-Videos:
-  - [C4 Framework Universal Asset ID](https://youtu.be/ZHQY0WYmGYU)
-  - [The Magic of C4](https://youtu.be/vzh0JzKhY4o)
-
-[C4 ID Whitepaper](http://www.cccc.io/c4id-whitepaper-u2.pdf)
-
-### Contributing
-
-Contributions are welcome. The following are some general guidelines for project organization. If you have questions please open an issue.
-
-The `master` branch holds the current release, and older releases can be found by their version number. The `dev` branch represents the development branch from which bug and feature branches should be taken. Pull requests that are accepted will be merged against the `dev` branch and then pushed to versioned releases as appropriate.
-
-Feature and bug branches should follow the github integrated naming convention.  Features should be given the `new` tag, and bugs the `bug` tag.  Here is an example of checking out a feature branch:
+**Build history.** Append diffs to a c4m file to create a version chain:
 
 ```bash
-> git checkout dev
-Switched to branch 'dev'
-Your branch is up-to-date with 'origin/dev'.
-> git checkout -b new/#99_some_github_issue
-...
+c4 id ./project/ > project.c4m                                  # snapshot
+c4 diff project.c4m ./project/ >> project.c4m                    # append changes
+
+c4 log project.c4m          # see what changed
+c4 patch -n 1 project.c4m   # recover the original state
 ```
 
-If a branch for an issue is already listed in this repository, then check it out and work from it.
+**Make a directory match a description.** Declarative — you say what
+the result should be, C4 figures out how to get there:
 
-### License
-This software is released under the MIT license.  See [LICENSE](./LICENSE) for more information.
+```bash
+c4 patch target.c4m ./dir/
+```
+
+Creates, moves, and removes files as needed. Nothing starts until all
+required content is confirmed available. Safe to re-run after
+interruption.
+
+**Store and retrieve content by ID:**
+
+```bash
+c4 id -s ./final/ > delivery.c4m     # identify + store
+c4 cat c44iCq6un9W47...              # retrieve by ID
+```
+
+The store can be a local directory, an S3-compatible object store, or
+both. Content goes in once, comes out by ID.
+
+**Undo what you just did:**
+
+```bash
+c4 patch -s new_state.c4m ./dir/ > changeset.c4m    # apply + preserve
+c4 patch -r changeset.c4m ./dir/                     # revert
+```
+
+**Work with Unix tools.** One entry per line, fields in predictable
+positions:
+
+```bash
+awk '{print $NF}' project.c4m | sort | uniq -d       # find duplicates
+grep '\.exr ' project.c4m | wc -l                    # count EXR files
+```
+
+**Merge two trees.** Combine branches, deliveries, or any two c4m
+files into one:
+
+```bash
+c4 merge branch-a.c4m branch-b.c4m > merged.c4m
+```
+
+Conflicts (same path, different content) are reported. Non-overlapping
+entries are combined.
+
+**Scan fast, hash later.** Structure-only scans skip content hashing.
+Edit the manifest, then hash only what survived:
+
+```bash
+c4 id -m s ./project/ > scan.c4m     # names only
+vi scan.c4m                           # remove what you don't want
+c4 id -c scan.c4m ./project/          # hash the rest
+```
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `c4 id` | Identify files, directories, or c4m files |
+| `c4 cat` | Retrieve/display content by C4 ID or c4m file path |
+| `c4 diff` | Compare two states (c4m files or directories) |
+| `c4 patch` | Apply a target state: reconcile directories, resolve chains |
+| `c4 merge` | Combine two or more trees |
+| `c4 log` | Show patch history |
+| `c4 split` | Split a patch chain |
+| `c4 explain` | Human-readable narration of what a command would do |
+| `c4 paths` | Convert between c4m format and plain path lists |
+| `c4 intersect` | Find common entries between two c4m files |
+
+Every command that takes a c4m file also takes a directory, and vice
+versa. `c4 <path>` is a shortcut for `c4 id -s` (identify and store).
+`echo "data" | c4` produces a bare ID from stdin and stores it.
+
+## The c4m format
+
+A c4m file is a complete filesystem description in plain text. Each
+line has permissions, timestamp, size, name, and C4 ID. Readable,
+editable, diffable, composable.
+
+A 10,000-entry c4m file is about 1.4 MB. It describes the identity
+of every file in the tree regardless of how large those files are.
+The description is the lightweight handle; the content is the heavy
+thing it refers to.
+
+- [User Guide](./c4m/README.md)
+- [Specification](./c4m/SPECIFICATION.md)
+- [Unix Recipes](./docs/c4m-unix-recipes.md)
+
+## Go library
+
+```go
+import "github.com/Avalanche-io/c4"
+
+id := c4.Identify(strings.NewReader("hello"))
+fmt.Println(id)
+// c447Fm3BJZQ62765jMZJH4m28hrDM7Szbj9CUmj4F4gnvyDYXYz4WfnK2nYRhFvRgYEectEXYBYWLDpLo6XGNAfKdt
+```
+
+C4 IDs are 90-character base58 strings — SHA-512 with a `c4` prefix.
+URL-safe, filename-safe, double-click selectable.
+
+Zero external dependencies. Go 1.16+.
+
+## Links
+
+- [C4 Framework Universal Asset ID](https://youtu.be/ZHQY0WYmGYU) (video)
+- [C4 ID Whitepaper](https://cccc.io/c4id-whitepaper-u2.pdf)
+- [CLI Reference](./docs/cli-reference.md)
+- [Getting Started](./docs/getting-started.md)
+- [FAQ](./docs/faq.md) — design decisions (SHA-512 permanence, c4m format, store scaling)
+
+## The C4 toolkit
+
+C4 is part of a cross-language ecosystem. Every tool reads and writes
+the same c4m format and produces identical C4 IDs:
+
+| Tool | Language | What it does |
+|------|----------|-------------|
+| **[c4](https://github.com/Avalanche-io/c4)** | Go | CLI — identify, diff, patch, merge |
+| **[c4sh](https://github.com/Avalanche-io/c4sh)** | Go | Shell — cd into c4m files, browse, copy |
+| **[c4py](https://github.com/Avalanche-io/c4py)** | Python | Library — scan, diff, verify, store |
+| **[c4git](https://github.com/Avalanche-io/c4git)** | Go | Git filter — version large files |
+| **[c4ts](https://github.com/Avalanche-io/c4ts)** | TypeScript | Browser + Node.js — zero dependencies |
+| **[c4-swift](https://github.com/Avalanche-io/c4-swift)** | Swift | Apple platforms — Sendable, Codable |
+| **[libc4](https://github.com/Avalanche-io/libc4)** | C | Embed in any application |
+
+See [c4toolkit](https://github.com/Avalanche-io/c4toolkit) for the
+full suite, install options, and version matrix.
+
+## License
+
+Apache 2.0

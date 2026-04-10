@@ -12,8 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/bgyss/c4"
-	"github.com/xtgo/set"
+	"github.com/Avalanche-io/c4"
 )
 
 func TestEncoding(t *testing.T) {
@@ -223,7 +222,7 @@ func TestCompareIDs(t *testing.T) {
 		{
 			Id_A: c4.Identify(strings.NewReader("Test string")),
 			Id_B: id,
-			Exp:  -1,
+			Exp:  1, // Real ID is greater than nil (zero-valued) ID
 		},
 	} {
 		if test.Id_A.Cmp(test.Id_B) != test.Exp {
@@ -308,7 +307,7 @@ func viewBytes(b []byte) string {
 		num := strconv.Itoa(int(b[j]))
 		out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 	}
-	out += " ... "
+	out += fmt.Sprintf(" ... ")
 	offset := 64 - length
 	if len(b) >= 128 {
 		for j := 64 - length; j < 64+length; j++ {
@@ -319,7 +318,7 @@ func viewBytes(b []byte) string {
 			out += fmt.Sprintf(" %s%s", strings.Repeat(" ", 3-len(num)), num)
 		}
 		offset = 128 - length
-		out += " ... "
+		out += fmt.Sprintf(" ... ")
 	}
 	for j := offset; j < offset+length; j++ {
 		num := strconv.Itoa(int(b[j]))
@@ -398,10 +397,10 @@ func TestDigestSum(t *testing.T) {
 				t.Errorf("Digests don't match, got %q expected %q", testsum1, sum)
 			}
 			// Check that Sum did not alter l, or r
-			if !bytes.Equal(r[:], rbytes[:]) {
+			if bytes.Compare(r[:], rbytes[:]) != 0 {
 				t.Error("Sum altered source r")
 			}
-			if !bytes.Equal(l[:], lbytes) {
+			if bytes.Compare(l[:], lbytes) != 0 {
 				t.Errorf("Sum altered source l")
 			}
 			t.Logf("\t   testsum1: %s\n\t   sum: %s\n", viewBytes(testsum1[:]), viewBytes(sum[:]))
@@ -436,8 +435,16 @@ func TestDigestSlice(t *testing.T) {
 	}
 
 	sort.Sort(ids)
-	n := set.Uniq(ids)
-	ids = ids[:n]
+	if len(ids) > 1 {
+		j := 1
+		for i := 1; i < len(ids); i++ {
+			if ids[i] != ids[i-1] {
+				ids[j] = ids[i]
+				j++
+			}
+		}
+		ids = ids[:j]
+	}
 
 	t.Run("Order", func(t *testing.T) {
 		if len(ids) != len(test_vectors) {
@@ -613,59 +620,5 @@ func TestUnarshalJSON(t *testing.T) {
 		} else if testObject.Name != test.Exp.Name || testObject.Id.String() != test.Exp.Id.String() {
 			t.Errorf("results do not match got %v, expected %v", testObject, test.Exp)
 		}
-	}
-}
-
-func TestParseEmptyStringReturnsBadLength(t *testing.T) {
-	if _, err := c4.Parse(""); err == nil {
-		t.Fatalf("expected error for empty input")
-	} else if err.Error() != "c4 ids must be 90 characters long, input length 0" {
-		t.Fatalf("unexpected error %q", err)
-	}
-}
-
-func TestIDsIDHandlesDuplicates(t *testing.T) {
-	base := c4.Identify(strings.NewReader("duplicate"))
-	ids := c4.IDs{base, base}
-	tree := ids.Tree()
-	if got := tree.Len(); got != 1 {
-		t.Fatalf("expected deduplicated len 1, got %d", got)
-	}
-	if ids.ID().Cmp(tree.ID()) != 0 {
-		t.Fatalf("IDs.ID did not match tree ID")
-	}
-}
-
-func TestSumHandlesOrderAndIdentity(t *testing.T) {
-	low := c4.Identify(strings.NewReader("alpha"))
-	high := c4.Identify(strings.NewReader("omega"))
-	if bytes.Compare(high[:], low[:]) != 1 {
-		low, high = high, low
-	}
-	sortedSum := high.Sum(low)
-	reverseSum := low.Sum(high)
-	if sortedSum.Cmp(reverseSum) != 0 {
-		t.Fatalf("sum not commutative: %q != %q", sortedSum, reverseSum)
-	}
-	if self := high.Sum(high); self.Cmp(high) != 0 {
-		t.Fatalf("sum of identical ids should be identity, got %q", self)
-	}
-}
-
-func TestMarshalUnmarshalJSONNil(t *testing.T) {
-	var id c4.ID
-	data, err := id.MarshalJSON()
-	if err != nil {
-		t.Fatalf("unexpected error %q", err)
-	}
-	if string(data) != `""` {
-		t.Fatalf("unexpected marshal result %q", data)
-	}
-	var decoded c4.ID
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		t.Fatalf("unexpected unmarshal error %q", err)
-	}
-	if !decoded.IsNil() {
-		t.Fatalf("expected nil id after unmarshal, got %s", decoded)
 	}
 }

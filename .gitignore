@@ -1,39 +1,60 @@
-# Compiled Object files, Static and Dynamic libs (Shared Objects)
+# Compiled binaries
 *.o
 *.a
 *.so
+*.exe
+/c4
+/c4sh
+/c4-mcp
+/c4-arm64
+/c4-test
 cmd/c4/c4
-cmd/c4id/c4id
-cmd/example/example
+bin/
 
-# no c4 binary
-./c4
+# Test fixture directories
+*_test/
+test_*/
+testdata/
 
-# testdata
+# C4M files and bundles
 *.c4m
+*.c4m_bundle/
+*_bundle/
 
-# Folders
+# Build artifacts
 _obj
 _test
-
-# Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out
-
 *.cgo1.go
 *.cgo2.c
 _cgo_defun.c
 _cgo_gotypes.go
 _cgo_export.*
-
 _testmain.go
+dist/
 
-*.exe
+# Test/coverage output
 *.test
 *.prof
 *.coverprofile
+coverage.out
+*_coverage.out
+*_output.txt
 
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Project-local state
+.docket-claims/
 .claude/
 .direnv/
 

@@ -1,260 +1,175 @@
 # Contributing to C4
 
-Thank you for your interest in contributing to C4! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to the C4 reference implementation! This document provides guidelines and information for contributors.
 
-## 🎯 Project Overview
+## Project Structure
 
-C4 ID is an implementation of the SMPTE standard ST 2114:2017 for universally unique and consistent identifiers. The project aims to provide a robust, performant, and secure implementation of the C4 ID system in Go.
+The C4 project consists of:
+- **Core library**: The main C4 ID implementation
+- **C4M package**: Manifest format for filesystem tracking
+- **Command-line tool**: The `c4` executable
 
-## 🛠 Development Setup
+## Development Workflow
 
-### Prerequisites
+### Branches
 
-- Go 1.20 or later
-- Git
-- (Optional) Nix for reproducible builds
+- `master` — current stable release
+- Feature branches — created from `master` for new features (`feature/description`)
+- Bug branches — created from `master` for fixes (`fix/description`)
 
-### Getting Started
+### Pull Requests
 
-1. **Fork and Clone**
-   ```bash
-   git clone https://github.com/your-username/c4.git
-   cd c4
-   ```
+1. Create your branch from `master`
+2. Make your changes with clear, concise commits
+3. Add tests for new functionality
+4. Ensure all tests pass: `go test ./...`
+5. Update documentation as needed
+6. Submit PR against `master`
 
-2. **Set up Development Environment**
-   
-   **Option A: Using Nix (Recommended)**
-   ```bash
-   nix develop
-   # This provides Go, golangci-lint, and all necessary tools
-   ```
-   
-   **Option B: Manual Setup**
-   ```bash
-   # Ensure Go 1.20+ is installed
-   go version
-   
-   # Install linting tools
-   go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-   go install golang.org/x/vuln/cmd/govulncheck@latest
-   ```
+## Development Setup
 
-3. **Verify Setup**
-   ```bash
-   # Run tests
-   go test ./...
-   
-   # Run linter
-   golangci-lint run
-   
-   # Build CLI
-   go build ./cmd/c4
-   ```
+### Option A: Nix
 
-## 📝 Development Workflow
+```bash
+nix develop
+direnv allow   # optional, one-time setup if you use direnv
+```
 
-### Branch Organization
+The flake provides a reproducible shell with Go, `gopls`, `gotestsum`,
+`golangci-lint`, and related tooling. Use `nix build` to build the CLI
+and `nix flake check` to run the packaged checks.
 
-- `master`: Current stable release
-- `develop`: Development branch (base for feature branches)
-- `feature/*`: Feature branches
-- `bugfix/*`: Bug fix branches
-- `hotfix/*`: Critical fixes for production
+### Option B: Local Go toolchain
 
-### Creating a Contribution
+Install Go locally and run the standard project commands from the repo
+root:
 
-1. **Create a Branch**
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/your-feature-name
-   ```
+```bash
+go test ./...
+go vet ./...
+go run ./cmd/c4 version
+```
 
-2. **Make Changes**
-   - Write code following project conventions
-   - Add/update tests for your changes
-   - Update documentation if needed
+## Code Style
 
-3. **Test Your Changes**
-   ```bash
-   # Run all tests
-   go test ./...
-   
-   # Check coverage
-   go test -cover ./...
-   
-   # Run linter
-   golangci-lint run
-   
-   # Run security check
-   govulncheck ./...
-   ```
+- Follow standard Go conventions
+- Use `gofmt` for formatting
+- Keep functions focused and well-documented
+- Add comments for exported functions and types
+- Avoid adding comments to code unless specifically requested
 
-4. **Commit Your Changes**
-   ```bash
-   git add .
-   git commit -m "feat: add new feature description"
-   ```
+## Testing
 
-5. **Push and Create PR**
-   ```bash
-   git push origin feature/your-feature-name
-   # Create PR via GitHub interface
-   ```
+- Write tests for new functionality
+- Maintain or improve code coverage
+- Run tests before submitting PRs: `go test ./...`
+- Check coverage: `go test -cover ./...`
 
-## 📋 Coding Standards
+## Documentation
 
-### Code Style
-
-- Follow standard Go conventions (`gofmt`, `go vet`)
-- Use meaningful variable and function names
-- Write clear, concise comments for public APIs
-- Keep functions focused and reasonably sized
-
-### Testing Requirements
-
-- **Minimum 75% test coverage** for new code
-- Write unit tests for all public functions
-- Include edge cases and error conditions
-- Add benchmarks for performance-critical code
-
-### Documentation
-
-- Document all exported functions, types, and constants
-- Include usage examples for complex APIs
 - Update README.md for user-facing changes
-- Add inline comments for complex logic
+- Document new features in the c4m package
+- Keep examples current and working
+- Use clear, concise language
 
-## 🎯 Quality Standards
+## C4 Tools Ecosystem
 
-### Before Submitting
+### Creating C4 Extension Tools
 
-Ensure your contribution meets these standards:
+The C4 ecosystem supports git-style extensibility. Any executable named `c4-*` in your PATH becomes available as a c4 subcommand.
 
-- [ ] All tests pass (`go test ./...`)
-- [ ] Code coverage ≥ 75% for modified packages
-- [ ] Linter passes (`golangci-lint run`)
-- [ ] No security vulnerabilities (`govulncheck ./...`)
-- [ ] Documentation updated
-- [ ] Commit messages follow conventional format
+#### How It Works
 
-### Conventional Commits
-
-Use conventional commit format for clear history:
-
-```
-type(scope): description
-
-[optional body]
-
-[optional footer]
+```bash
+# An executable named: c4-verify
+# Can be called as:    c4 verify [args]
 ```
 
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes
-- `refactor`: Code refactoring
-- `test`: Adding/updating tests
-- `chore`: Maintenance tasks
+#### Creating Your Own C4 Tool
 
-**Examples:**
+1. **Name your tool**: Use the pattern `c4-<command>`
+2. **Any language**: Write in Go, Python, Shell, Rust, etc.
+3. **Install to PATH**: Make it executable and accessible
+4. **Integration**: Automatically available as `c4 <command>`
+
+#### Example Tool Structure
+
+```bash
+#!/usr/bin/env python3
+# c4-backup - Backup tool with C4 verification
+
+import sys
+import subprocess
+
+def main():
+    # Tool implementation
+    pass
+
+if __name__ == "__main__":
+    main()
 ```
-feat(manifest): add new file traversal algorithm
-fix(id): handle edge case in digest computation
-docs(readme): update installation instructions
-test(store): add benchmarks for cache operations
-```
 
-## 🏗 Architecture Guidelines
+#### Tool Guidelines
 
-### Package Organization
+- **Unix philosophy**: Do one thing well
+- **Composability**: Work with pipes and standard tools
+- **C4M format**: Use C4M for manifest input/output when appropriate
+- **Exit codes**: Use standard exit codes (0 for success)
+- **Help text**: Provide `-h/--help` documentation
 
-- **Root package**: Core C4 ID functionality
-- **`cmd/c4/`**: CLI application
-- **`db/`**: Database operations
-- **`store/`**: Storage abstraction layer
-- **`manifest/`**: File manifest management
-- **`util/`**: Utility functions
+#### Proposed Tools
 
-### Performance Considerations
+The core `c4` CLI provides `id`, `cat`, `diff`, `patch`, `merge`, `log`, and `split` as built-in subcommands. Extension tools can add complementary functionality:
+- `c4-verify` - Verify against c4m files
+- `c4-backup` - Backup workflows
+- `c4-watch` - Monitor filesystem changes
 
-- Benchmark performance-critical code
-- Avoid unnecessary allocations in hot paths
-- Use appropriate data structures for use cases
-- Consider memory usage for large datasets
+### Contributing Tools
 
-### Security Guidelines
+You can contribute C4 tools in several ways:
 
-- Never log sensitive data
-- Validate all inputs
-- Use crypto/rand for randomness
-- Follow secure coding practices
+1. **Separate repository**: Create your own repo for your tool
+2. **c4-tools repository**: Contribute to a future community tools collection
+3. **Share and announce**: Let the community know about your tool
 
-## 🐛 Reporting Issues
+### Tool Development Tips
 
-### Bug Reports
+- Start with a simple prototype
+- Get community feedback early
+- Consider existing Unix tool conventions
+- Test with real-world use cases
+- Document usage examples
 
-Include in your bug report:
-
-- Go version and OS
-- Clear description of the issue
-- Steps to reproduce
-- Expected vs actual behavior
-- Any relevant error messages
-
-### Feature Requests
-
-Include in your feature request:
-
-- Use case and motivation
-- Proposed API or interface
-- Potential implementation approach
-- Impact on existing functionality
-
-## 🔄 Review Process
-
-### Pull Request Requirements
-
-- Clear description of changes
-- Links to related issues
-- Tests for new functionality
-- Documentation updates
-- Passing CI checks
-
-### Review Criteria
-
-Reviewers will evaluate:
-
-- Code quality and style
-- Test coverage and quality
-- Performance impact
-- Security implications
-- API design consistency
-- Documentation completeness
-
-## 📚 Resources
-
-### Useful Links
-
-- [C4 ID Whitepaper](http://www.cccc.io/c4id-whitepaper-u2.pdf)
-- [SMPTE ST 2114:2017 Standard](https://www.smpte.org/)
-- [Go Documentation](https://golang.org/doc/)
-- [Effective Go](https://golang.org/doc/effective_go.html)
+## Community
 
 ### Getting Help
 
-- Open an issue for questions
-- Join discussions in existing issues
-- Review existing code for patterns
-- Check documentation and examples
+- Open an issue for bugs or questions
+- Check existing issues before creating new ones
+- Provide clear reproduction steps for bugs
+- Include version information and environment details
 
-## 📄 License
+### Feature Requests
 
-By contributing to C4, you agree that your contributions will be licensed under the MIT License.
+- Open an issue describing the use case
+- Explain why existing functionality doesn't meet the need
+- Be open to alternative approaches
+- Consider implementing it as an external tool first
 
----
+### Code of Conduct
 
-Thank you for contributing to C4! 🚀
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+## Release Process
+
+1. Features are developed in feature branches
+2. Merged to `master` after review
+3. Releases are tagged with semantic versioning
+
+## License
+
+By contributing to C4, you agree that your contributions will be licensed under the Apache License. See [LICENSE](LICENSE) for details.
+
+## Questions?
+
+If you have questions about contributing, please open an issue and we'll be happy to help!

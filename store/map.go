@@ -4,10 +4,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/bgyss/c4"
+	"github.com/Avalanche-io/c4"
 )
 
-var _ Store = &MAP{}
+var _ Store = MAP{}
 
 // A MAP store is an implementation of the Store interface that stores all data
 // in ram.
@@ -23,15 +23,23 @@ func (s MAP) Open(id c4.ID) (io.ReadCloser, error) {
 	return os.Open(s[id])
 }
 
-// Create creates an io.WriteCloser interface to a ram buffer, if the data for
-// `id` already exists in the MAP store then an error of type `*os.PathError` is
-// returned.
+// Create creates an io.WriteCloser that atomically writes to the mapped path.
+// If the data for `id` already exists, an error of type `*os.PathError` is returned.
 func (s MAP) Create(id c4.ID) (io.WriteCloser, error) {
-	return os.Create(s[id])
+	return NewDurableWriter(s[id])
 }
 
 // Remove removes the c4 id and it's assoceated data from memory, an error is
 // returned if the id does not exist.
+func (s MAP) Has(id c4.ID) bool {
+	_, ok := s[id]
+	return ok
+}
+
+func (s MAP) Put(r io.Reader) (c4.ID, error) {
+	return defaultPut(s, r)
+}
+
 func (s MAP) Remove(id c4.ID) error {
 	return os.Remove(s[id])
 }
