@@ -85,6 +85,20 @@ nix flake check
 If you use `direnv`, run `direnv allow` once in the repo root to load
 the flake automatically.
 
+### Docker
+
+Build and run the CLI in a container:
+
+```bash
+docker build -t c4:local .
+docker run --rm -v "$PWD:/data:ro" c4:local id /data
+```
+
+For Synology DSM 7+ Container Manager, this fork also includes a
+ready-to-edit [`docker-compose.synology.yml`](./docker-compose.synology.yml)
+example. Update `/volume1/data` to the NAS folder you want to scan, then
+run the project and inspect the logs for the emitted IDs or c4m output.
+
 ### Other languages
 
 ```bash

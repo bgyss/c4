@@ -26,6 +26,30 @@ The C4 project consists of:
 5. Update documentation as needed
 6. Submit PR against `master`
 
+## Development Setup
+
+### Option A: Nix
+
+```bash
+nix develop
+direnv allow   # optional, one-time setup if you use direnv
+```
+
+The flake provides a reproducible shell with Go, `gopls`, `gotestsum`,
+`golangci-lint`, and related tooling. Use `nix build` to build the CLI
+and `nix flake check` to run the packaged checks.
+
+### Option B: Local Go toolchain
+
+Install Go locally and run the standard project commands from the repo
+root:
+
+```bash
+go test ./...
+go vet ./...
+go run ./cmd/c4 version
+```
+
 ## Code Style
 
 - Follow standard Go conventions

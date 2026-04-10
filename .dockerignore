@@ -1,0 +1,23 @@
+# VCS and CI metadata
+.git
+.github
+
+# Local/editor artifacts
+.DS_Store
+.claude
+.direnv
+.envrc
+
+# Build/test outputs
+*.out
+*.cov
+coverage.txt
+coverage.out
+coverage.html
+final_coverage.out
+overall.cov
+result
+
+# Nix and temp files
+.nix-*
+*.tmp
